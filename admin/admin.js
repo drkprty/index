@@ -468,11 +468,11 @@ function safeFileName(value){
 
 function getGitHubImageConfig(){
   return {
-    owner: localStorage.getItem("drkprty-github-owner") || "oaxsun",
-    repo: localStorage.getItem("drkprty-github-repo") || "orbita",
+    owner: localStorage.getItem("drkprty-github-owner") || "drkprty",
+    repo: localStorage.getItem("drkprty-github-repo") || "content",
     branch: localStorage.getItem("drkprty-github-branch") || "main",
-    uploadPath: localStorage.getItem("drkprty-github-upload-path") || "assets/uploads",
-    publicBaseUrl: localStorage.getItem("drkprty-github-public-base-url") || "https://drkprty.uk",
+    uploadPath: localStorage.getItem("drkprty-github-upload-path") || "images",
+    publicBaseUrl: localStorage.getItem("drkprty-github-public-base-url") || "https://cdn.jsdelivr.net/gh/drkprty/content@main",
     token: localStorage.getItem("drkprty-github-token") || ""
   };
 }
