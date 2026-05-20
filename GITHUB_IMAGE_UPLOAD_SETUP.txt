@@ -1,0 +1,76 @@
+# DRKPRTY — Subir imágenes al repo de GitHub desde el admin
+
+Esta versión permite subir imágenes desde Admin > Artículos y guardarlas dentro del repo de GitHub en:
+
+assets/uploads/
+
+Luego el artículo guarda una URL pública como:
+
+https://drkprty.uk/assets/uploads/archivo.jpg
+
+## 1. Crea la carpeta
+
+En tu repo crea la carpeta:
+
+assets/uploads/
+
+Puedes dejar un archivo vacío `.gitkeep` dentro.
+
+## 2. Crea un GitHub Personal Access Token
+
+Ve a GitHub:
+
+Settings > Developer settings > Personal access tokens > Fine-grained tokens > Generate new token
+
+Configura:
+
+- Repository access: Only select repositories
+- Selecciona el repo de DRKPRTY / orbita
+- Permissions:
+  - Contents: Read and write
+  - Metadata: Read-only
+
+Copia el token. GitHub solo lo muestra una vez.
+
+## 3. Configura el admin
+
+Entra a:
+
+/admin/
+
+En el panel izquierdo haz clic en:
+
+Configurar GitHub
+
+Llena:
+
+- Owner: oaxsun
+- Repo: orbita
+- Branch: main
+- Carpeta de imágenes: assets/uploads
+- URL pública del sitio: https://drkprty.uk
+- Token: tu token de GitHub
+
+Guarda.
+
+## 4. Sube una imagen
+
+En Admin > Artículos:
+
+1. Crea o edita artículo.
+2. En "Subir imagen al repo de GitHub", elige imagen.
+3. Guarda artículo.
+
+El admin hará:
+- subir imagen al repo vía GitHub API
+- crear commit automático
+- poner la URL pública en el campo `image`
+- guardar artículo en Firestore
+
+## Notas importantes
+
+- No compartas tu token.
+- El token se guarda solo en localStorage de tu navegador.
+- Usa un token Fine-grained limitado a este repo.
+- Después de subir una imagen, GitHub Pages puede tardar 1-3 minutos en servirla.
+- Esto evita Firebase Storage/Blaze, pero cada imagen crea un commit.

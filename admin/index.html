@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin — DRKPRTY</title>
+  <link rel="stylesheet" href="admin.css" />
+  <link rel="icon" href="../assets/favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" href="../assets/favicon.png">
+  <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Archivo+Black&display=swap" rel="stylesheet">
+</head>
+<body>
+  <section class="login-screen" id="loginScreen">
+    <form class="login-card" id="loginForm">
+      <div class="brand login-brand">
+        <span>◎</span>
+        <div>
+          <h1>DRKPRTY</h1>
+          <p>ADMIN LOGIN</p>
+        </div>
+      </div>
+
+      <label>Usuario
+        <input id="loginUser" autocomplete="username" required />
+      </label>
+
+      <label>Password
+        <input id="loginPass" type="password" autocomplete="current-password" required />
+      </label>
+
+      <p class="login-error" id="loginError">Usuario o password incorrecto.</p>
+
+      <button class="primary" type="submit">Entrar →</button>
+    </form>
+  </section>
+
+  <div class="admin-app" id="adminApp">
+  <aside class="sidebar">
+    <a class="brand" href="../index.html">
+      <span>◎</span>
+      <div>
+        <h1>DRKPRTY</h1>
+        <p>ADMIN PANEL</p>
+      </div>
+    </a>
+
+    <nav>
+      <button class="active" data-section="hero">Home</button>
+      <button data-section="articles">Artículos</button>
+      <button data-section="events">Eventos</button>
+      <button data-section="analytics">Analytics</button>
+    </nav>
+
+    <div class="sidebar-note">
+      <strong>Imágenes en GitHub</strong>
+      <p>Configura un token personal para subir imágenes al repo desde el admin.</p>
+      <button id="githubImageConfig" type="button">Configurar GitHub</button>
+    </div>
+  </aside>
+
+  <main>
+    <header class="top">
+      <div>
+        <p>CMS LOCAL</p>
+        <h2 id="pageTitle">Home</h2>
+      </div>
+      <div class="top-actions">
+        <button id="resetDemo">Reset demo</button>
+        <button id="exportAll">Exportar todo</button>
+        <button id="logoutBtn">Salir</button>
+      </div>
+    </header>
+
+    <section id="hero" class="panel active">
+      <div class="card">
+        <h3>Destacadas</h3>
+        <p class="muted">Elige cuántas destacadas mostrar. En automático se rellenan todos los días con las últimas entradas publicadas o, si activas el switch, con los artículos más vistos de los últimos 7 días. Los slots manuales siguen funcionando como prioridad.</p>
+        <div class="form-grid">
+          <label>Número de destacadas
+            <select id="heroFeaturedCount">
+              <option value="3">3 destacadas</option>
+              <option value="4">4 destacadas</option>
+              <option value="5">5 destacadas</option>
+            </select>
+          </label>
+          <label class="switch-row hero-auto">
+            <span>Autorrellenar destacadas automáticamente</span>
+            <input id="heroAutoFeatured" type="checkbox" />
+          </label>
+          <label class="switch-row hero-auto">
+            <span>Usar los más vistos de los últimos 7 días en los primeros lugares</span>
+            <input id="heroFeaturedModeTop" type="checkbox" />
+          </label>
+        </div>
+        <div id="heroFeatured" class="slot-list"></div>
+        <button class="primary add-slot-btn" id="addFeaturedSlot" type="button">Agregar destacada</button>
+      </div>
+
+      <div class="card">
+        <h3>New Topics</h3>
+        <p class="muted">Se muestran automáticamente las últimas 10 entradas publicadas. La más nueva aparece hasta arriba.</p>
+        <div id="heroTopicsAuto" class="list compact"></div>
+      </div>
+
+      <div class="card">
+        <h3>En Rotación</h3>
+        <p class="muted">Selecciona 5 entradas de tipo RESEÑA para el módulo de curaduría.</p>
+        <div id="heroRotation" class="slot-list"></div>
+      </div>
+
+      <button class="primary" id="saveHero">Guardar Home</button>
+    </section>
+
+    <section id="articles" class="panel">
+      <div class="panel-header">
+        <div>
+          <h3>Artículos</h3>
+          <p class="muted">Busca, crea, edita, publica, despublica o programa artículos.</p>
+        </div>
+        <div class="header-actions"><button id="importArticleBtn">Importar archivo</button><input id="importArticleFile" type="file" accept=".json,application/json" hidden><button class="primary" id="createArticle">Crear artículo</button></div>
+      </div>
+
+      <div class="toolbar">
+        <input id="articleSearch" placeholder="Buscar artículo por título, categoría o hashtag..." />
+        <div class="tabs">
+          <button class="active" data-article-tab="all">Todos</button>
+          <button data-article-tab="published">Publicados</button>
+          <button data-article-tab="unpublished">No publicadas</button>
+          <button data-article-tab="scheduled">Programadas</button>
+        </div>
+      </div>
+
+      <div id="articleList" class="list"></div>
+    </section>
+
+
+    <section id="analytics" class="panel">
+      <div class="panel-header">
+        <div>
+          <h3>Analytics</h3>
+          <p class="muted">Vistas registradas desde Firestore. Histórico es la vista por default.</p>
+        </div>
+        <button class="primary" id="refreshAnalytics" type="button">Actualizar analytics</button>
+      </div>
+
+      <div class="analytics-summary">
+        <article class="analytics-card">
+          <span>Total de vistas</span>
+          <strong id="analyticsTotalViews">0</strong>
+          <small id="analyticsRangeLabel">Histórico</small>
+        </article>
+        <article class="analytics-card">
+          <span>Artículos con vistas</span>
+          <strong id="analyticsViewedCount">0</strong>
+          <small>Solo artículos con 1+ views</small>
+        </article>
+      </div>
+
+      <div class="toolbar analytics-toolbar">
+        <div class="tabs analytics-range-tabs">
+          <button class="active" data-analytics-range="all">Histórico</button>
+          <button data-analytics-range="today">Hoy</button>
+          <button data-analytics-range="7d">7 días</button>
+          <button data-analytics-range="30d">30 días</button>
+          <button data-analytics-range="year">Este Año</button>
+        </div>
+        <label class="analytics-sort-label">Ordenar
+          <select id="analyticsSort">
+            <option value="desc">Más vistos</option>
+            <option value="asc">Menos vistos</option>
+          </select>
+        </label>
+      </div>
+
+      <div id="analyticsList" class="list analytics-list"></div>
+    </section>
+
+    <section id="events" class="panel">
+      <div class="panel-header">
+        <div>
+          <h3>Eventos</h3>
+          <p class="muted">Edita la agenda de próximos eventos.</p>
+        </div>
+        <button class="primary" id="createEvent">Crear evento</button>
+      </div>
+
+      <div id="eventList" class="list"></div>
+    </section>
+  </main>
+
+  <dialog id="articleDialog">
+    <form method="dialog" class="modal-form" id="articleForm">
+      <header>
+        <h3 id="articleDialogTitle">Crear artículo</h3>
+        <button type="button" class="ghost" data-close="articleDialog">Cerrar</button>
+      </header>
+
+      <input type="hidden" id="articleId" />
+
+      <label>Imagen URL
+        <input id="articleImage" required placeholder="https://..." />
+      </label>
+
+      <label>Subir imagen al repo de GitHub
+        <input id="articleImageFile" type="file" accept="image/*" />
+        <small class="field-help">Opcional: sube una imagen y el admin llenará automáticamente la URL pública de GitHub Pages.</small>
+      </label>
+
+      <label>Título
+        <input id="articleTitle" required />
+      </label>
+
+      <label>Preview text
+        <textarea id="articleExcerpt" rows="3" required></textarea>
+      </label>
+
+      <label>Cuerpo
+        <textarea id="articleBody" rows="8" required placeholder="Separa párrafos con doble salto de línea"></textarea>
+      </label>
+
+      <label>Spotify Embed URL
+        <input id="articleSpotifyEmbed" placeholder="https://open.spotify.com/embed/album/..." />
+      </label>
+
+      <div class="form-grid">
+        <label>Autor
+          <input id="articleAuthor" value="DRKPRTY" required />
+        </label>
+
+        <label>Fecha
+          <input id="articleDate" placeholder="18 MAYO 2025" required />
+        </label>
+      </div>
+
+      <div class="form-grid">
+        <label>Hashtags
+          <input id="articleTags" placeholder="#MÚSICA, #RESEÑAS" required />
+        </label>
+
+        <label>Categoría
+          <select id="articleCategory">
+            <option>NOTICIA</option>
+            <option>RESEÑA</option>
+            <option>CONCIERTO</option>
+            <option>FESTIVALES</option>
+            <option>ENTREVISTA</option>
+            <option>LANZAMIENTO</option>
+            <option>AGENDA</option>
+            <option>CONCURSO</option>
+            <option>ARTE</option>
+            <option>PODCAST</option>
+            <option>HIGHLIGHT</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="form-grid">
+        <label>Programar publicación
+          <input id="articlePublishAt" type="datetime-local" />
+        </label>
+
+        <label class="switch-row">
+          <span>Publicado</span>
+          <input id="articlePublished" type="checkbox" />
+        </label>
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="danger" id="deleteArticle">Eliminar</button>
+        <button type="submit" class="primary">Guardar artículo</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="eventDialog">
+    <form method="dialog" class="modal-form" id="eventForm">
+      <header>
+        <h3 id="eventDialogTitle">Crear evento</h3>
+        <button type="button" class="ghost" data-close="eventDialog">Cerrar</button>
+      </header>
+
+      <input type="hidden" id="eventId" />
+
+      <div class="form-grid">
+        <label>Día
+          <input id="eventDay" placeholder="24" required />
+        </label>
+
+        <label>Mes
+          <input id="eventMonth" placeholder="MAY" required />
+        </label>
+      </div>
+
+      <label>Nombre del evento
+        <input id="eventTitle" required />
+      </label>
+
+      <label>Venue
+        <input id="eventVenue" placeholder="Pepsi Center WTC · CDMX" required />
+      </label>
+
+      <label>Tipo
+        <select id="eventType">
+          <option>CONCIERTO</option>
+          <option>FESTIVAL</option>
+        </select>
+      </label>
+
+      <div class="modal-actions">
+        <button type="button" class="danger" id="deleteEvent">Eliminar</button>
+        <button type="submit" class="primary">Guardar evento</button>
+      </div>
+    </form>
+  </dialog>
+
+
+  <dialog id="selectArticleDialog">
+    <div class="modal-form">
+      <header>
+        <h3 id="selectDialogTitle">Seleccionar artículo</h3>
+        <button type="button" class="ghost" data-close="selectArticleDialog">Cerrar</button>
+      </header>
+
+      <input id="selectArticleSearch" placeholder="Buscar artículo..." />
+      <p class="muted" id="selectDialogHint">Últimos 10 artículos creados.</p>
+      <div id="selectArticleList" class="list compact"></div>
+    </div>
+  </dialog>
+
+  </div>
+
+
+
+
+  <dialog id="githubDialog">
+    <form method="dialog" class="modal-form" id="githubForm">
+      <header>
+        <h3>Configurar subida a GitHub</h3>
+        <button type="button" class="ghost" data-close="githubDialog">Cerrar</button>
+      </header>
+
+      <p class="muted">Estos datos se guardan solo en tu navegador. Usa un fine-grained token con acceso únicamente a este repo.</p>
+
+      <label>Owner / usuario
+        <input id="githubOwner" placeholder="oaxsun" required />
+      </label>
+
+      <label>Repo
+        <input id="githubRepo" placeholder="orbita" required />
+      </label>
+
+      <label>Branch
+        <input id="githubBranch" placeholder="main" required />
+      </label>
+
+      <label>Carpeta de imágenes
+        <input id="githubUploadPath" placeholder="assets/uploads" required />
+      </label>
+
+      <label>URL pública del sitio
+        <input id="githubPublicBaseUrl" placeholder="https://drkprty.uk" required />
+      </label>
+
+      <label>GitHub Personal Access Token
+        <input id="githubToken" type="password" placeholder="github_pat_..." required />
+        <small class="field-help">No lo subas a GitHub. Se queda en localStorage de este navegador.</small>
+      </label>
+
+      <menu>
+        <button type="button" data-close="githubDialog">Cancelar</button>
+        <button class="primary" type="submit">Guardar configuración</button>
+      </menu>
+    </form>
+  </dialog>
+
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import {
+      getAuth,
+      signInWithEmailAndPassword,
+      onAuthStateChanged,
+      signOut
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import {
+      getFirestore,
+      collection,
+      doc,
+      getDocs,
+      getDoc,
+      setDoc,
+      deleteDoc,
+      serverTimestamp,
+      query,
+      orderBy
+    } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const contentFirebaseConfig = {
+  apiKey: "AIzaSyBF7dI6cLaec1hMO6sRYyKTbgmhptq0OEM",
+  authDomain: "orbita-727cd.firebaseapp.com",
+  projectId: "orbita-727cd",
+  storageBucket: "orbita-727cd.firebasestorage.app",
+  messagingSenderId: "823174769372",
+  appId: "1:823174769372:web:c0b62f90917c035dbb6219"
+};
+
+const statsFirebaseConfig = {
+  apiKey: "AIzaSyBxChWYQYJIfdzCe4HL51x8oGixcvLAxJw",
+  authDomain: "drkprty-654ec.firebaseapp.com",
+  projectId: "drkprty-654ec",
+  storageBucket: "drkprty-654ec.firebasestorage.app",
+  messagingSenderId: "17948730429",
+  appId: "1:17948730429:web:917b9d10f70439c54c3654",
+  measurementId: "G-8TZ70MZQFM"
+};
+
+    const contentApp = initializeApp(contentFirebaseConfig, "drkprty-content-admin");
+    const statsApp = initializeApp(statsFirebaseConfig, "drkprty-stats-admin");
+    const auth = getAuth(contentApp);
+    const db = getFirestore(contentApp);
+    const statsDb = getFirestore(statsApp);
+
+    window.orbitaFirebase = {
+      auth,
+      db,
+      statsDb,
+      signInWithEmailAndPassword,
+      onAuthStateChanged,
+      signOut,
+      collection,
+      doc,
+      getDocs,
+      getDoc,
+      setDoc,
+      deleteDoc,
+      serverTimestamp,
+      query,
+      orderBy
+    };
+  </script>
+
+  <script src="../data.js"></script>
+  <script src="admin.js?v=15"></script>
+</body>
+</html>

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>DRKPRTY · Firestore Views Debug</title>
+  <style>
+    body{margin:0;background:#050505;color:#fff;font-family:Arial,system-ui,sans-serif;padding:24px;line-height:1.45}
+    button{border:1px solid #fff;background:#fff;color:#000;border-radius:999px;padding:12px 16px;font-weight:800;cursor:pointer;margin-right:8px;margin-bottom:8px}
+    code,pre{background:#111;border:1px solid #333;border-radius:12px;padding:12px;display:block;white-space:pre-wrap;overflow:auto}
+    .ok{color:#8cffb3}.bad{color:#ff7d7d}.muted{color:#aaa}
+  </style>
+
+  <link rel="icon" href="assets/favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" href="assets/favicon.png">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+</head>
+<body>
+  <h1>DRKPRTY · Firestore Views Debug</h1>
+  <p>Esta página prueba escritura directa en <code>articleStats/debug-test</code> usando el mismo Firebase config del sitio público.</p>
+  <p><strong>Proyecto conectado:</strong> <span id="projectId"></span></p>
+  <button id="btn">Probar escritura</button>
+  <button id="btnRandom">Probar con ID nuevo</button>
+  <pre id="out">Inicializando...</pre>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getFirestore, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    const firebaseConfig = {
+  apiKey: "AIzaSyBxChWYQYJIfdzCe4HL51x8oGixcvLAxJw",
+  authDomain: "drkprty-654ec.firebaseapp.com",
+  projectId: "drkprty-654ec",
+  storageBucket: "drkprty-654ec.firebasestorage.app",
+  messagingSenderId: "17948730429",
+  appId: "1:17948730429:web:917b9d10f70439c54c3654",
+  measurementId: "G-8TZ70MZQFM"
+};
+
+    document.getElementById("projectId").textContent = firebaseConfig.projectId;
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const out = document.getElementById("out");
+
+    function log(message){
+      out.textContent = `${new Date().toLocaleTimeString()} · ${message}
+` + out.textContent;
+    }
+
+    async function writeTest(id = "debug-test"){
+      try{
+        const ref = doc(db, "articleStats", id);
+        log(`Leyendo articleStats/${id}...`);
+        const snap = await getDoc(ref);
+        if(snap.exists()){
+          const current = Number(snap.data()?.views || 0);
+          const next = current + 1;
+          log(`Existe. views actuales=${current}. Actualizando a ${next}...`);
+          await updateDoc(ref, { views: next });
+        }else{
+          log("No existe. Creando documento con views=1...");
+          await setDoc(ref, { views: 1 });
+        }
+        const after = await getDoc(ref);
+        log(`✅ OK. Documento guardado. views=${Number(after.data()?.views || 0)}`);
+      }catch(error){
+        log(`❌ ERROR: ${error.code || error.name || "unknown"} · ${error.message || error}`);
+        console.error(error);
+      }
+    }
+
+    document.getElementById("btn").onclick = () => writeTest("debug-test");
+    document.getElementById("btnRandom").onclick = () => writeTest(`debug-${Date.now()}`);
+    log("Firebase inicializado. Listo para probar.");
+    writeTest("debug-test");
+  </script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /articleStats/{articleId} {
+      allow read: if true;
+
+      allow create: if
+        request.resource.data.keys().hasOnly(["articleId", "views", "dailyViews", "updatedAt"]) &&
+        request.resource.data.articleId is string &&
+        request.resource.data.views is int &&
+        request.resource.data.views >= 1 &&
+        request.resource.data.dailyViews is map;
+
+      allow update: if
+        request.resource.data.keys().hasOnly(["articleId", "views", "dailyViews", "updatedAt"]) &&
+        request.resource.data.articleId is string &&
+        request.resource.data.views is int &&
+        request.resource.data.views >= resource.data.views &&
+        request.resource.data.dailyViews is map;
+    }
+
+    match /articleViewsDaily/{dailyId} {
+      allow read: if true;
+
+      allow create: if
+        request.resource.data.keys().hasOnly(["articleId", "date", "views", "updatedAt"]) &&
+        request.resource.data.articleId is string &&
+        request.resource.data.date is string &&
+        request.resource.data.views is int &&
+        request.resource.data.views >= 1;
+
+      allow update: if
+        request.resource.data.keys().hasOnly(["articleId", "date", "views", "updatedAt"]) &&
+        request.resource.data.articleId is string &&
+        request.resource.data.date is string &&
+        request.resource.data.views is int &&
+        request.resource.data.views >= resource.data.views;
+    }
+
+    match /newsletterSubscribers/{subscriberId} {
+      allow create: if
+        request.resource.data.keys().hasOnly(["email", "createdAt"]) &&
+        request.resource.data.email is string;
+
+      allow read, update, delete: if false;
+    }
+
+    match /{document=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+  }
+}
