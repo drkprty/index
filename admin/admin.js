@@ -557,15 +557,64 @@ async function githubPutFile(repoPath, contentBase64, message){
   return res.json();
 }
 
+function cleanGitHubFolder(value, fallback){
+  const clean = String(value || "").trim().replace(/^\/|\/$/g, "");
+  return clean || fallback;
+}
+
+function githubArticleRepoPath(article){
+  const cfg = getGitHubImageConfig();
+  const articlePath = cleanGitHubFolder(cfg.articlePath, "articles");
+  return `${articlePath}/${safeFileName(article.id)}.json`;
+}
+
+function articleForGitHub(article){
+  return {
+    ...article,
+    id: String(article.id || "").trim(),
+    title: String(article.title || "").trim(),
+    updatedAt: new Date().toISOString()
+  };
+}
+
+function buildArticlesIndex(){
+  return sortedArticles(articles).map(a => ({
+    id:a.id,
+    title:a.title,
+    category:a.category,
+    date:a.date,
+    image:a.image,
+    excerpt:a.excerpt,
+    publishAt:a.publishAt || "",
+    published:a.published,
+    scheduled:!!a.scheduled,
+    createdAt:a.createdAt || ""
+  }));
+}
+
+async function saveArticlesIndexToGitHub(){
+  const cfg = getGitHubImageConfig();
+  const articlePath = cleanGitHubFolder(cfg.articlePath, "articles");
+  const repoPath = `${articlePath}/index.json`;
+  const json = JSON.stringify(buildArticlesIndex(), null, 2);
+  await githubPutFile(repoPath, textToBase64(json), "Update articles index");
+  return repoPath;
+}
+
 async function saveArticleJsonToGitHub(article){
   const cfg = getGitHubImageConfig();
   if(!cfg.token) return { skipped:true, reason:"missing-token" };
 
-  const articlePath = (cfg.articlePath || "articles").replace(/^\/|\/$/g, "");
-  const repoPath = `${articlePath}/${safeFileName(article.id)}.json`;
-  const json = JSON.stringify(article, null, 2);
-  await githubPutFile(repoPath, textToBase64(json), `Save article JSON: ${article.id}`);
-  return { skipped:false, repoPath };
+  const cleanArticle = articleForGitHub(article);
+  if(!cleanArticle.id) throw new Error("No se puede guardar en GitHub: el artículo no tiene slug/id.");
+
+  const repoPath = githubArticleRepoPath(cleanArticle);
+  const json = JSON.stringify(cleanArticle, null, 2);
+  await githubPutFile(repoPath, textToBase64(json), `Save article JSON: ${cleanArticle.id}`);
+  const indexPath = await saveArticlesIndexToGitHub();
+
+  console.info("DRKPRTY GitHub article saved", { repoPath, indexPath });
+  return { skipped:false, repoPath, indexPath };
 }
 
 function fileToBase64(file){
@@ -1131,21 +1180,38 @@ $("articleForm").addEventListener("submit", async e=>{
   if(idx >= 0) articles[idx] = article;
   else articles.unshift(article);
 
-  await saveArticleDoc(article);
+  const submitButton = e.submitter || document.querySelector("#articleForm button[type='submit']");
+  const previousSubmitText = submitButton?.textContent;
+
   try{
+    if(submitButton){
+      submitButton.disabled = true;
+      submitButton.textContent = "Guardando artículo...";
+    }
+
+    await saveArticleDoc(article);
+
+    if(submitButton) submitButton.textContent = "Guardando JSON en GitHub...";
     const githubResult = await saveArticleJsonToGitHub(article);
     if(githubResult?.skipped){
       alert("El artículo se guardó en Firebase, pero NO se guardó en GitHub porque falta configurar el GitHub token.");
       return;
     }
+
+    await saveHeroOnly();
+    renderAll();
+    $("articleDialog").close();
+    console.info(`Artículo guardado en GitHub: ${githubResult.repoPath}`);
   }catch(error){
     console.error(error);
-    alert(`El artículo sí se guardó en Firebase, pero NO se pudo guardar en GitHub:\n\n${error.message}`);
+    alert(`No se pudo completar el guardado:\n\n${error.message}`);
     return;
+  }finally{
+    if(submitButton){
+      submitButton.disabled = false;
+      submitButton.textContent = previousSubmitText || "Guardar artículo";
+    }
   }
-  await saveHeroOnly();
-  renderAll();
-  $("articleDialog").close();
 });
 
 $("deleteArticle").addEventListener("click", async ()=>{
