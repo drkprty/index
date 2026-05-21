@@ -1,22 +1,134 @@
-{
-  "id": "mi-articulo-demo",
-  "title": "Título del artículo",
-  "category": "NOTICIA",
-  "date": "15 MAYO 2026",
-  "author": "ÓRBITA",
-  "image": "https://url-de-la-imagen.com/imagen.jpg",
-  "excerpt": "Texto preview corto que aparece en las cards.",
-  "tags": [
-    "#MÚSICA",
-    "#LANZAMIENTOS"
-  ],
-  "body": [
-    "Primer párrafo del artículo.",
-    "Segundo párrafo del artículo.",
-    "Tercer párrafo del artículo."
-  ],
-  "quote": "FRASE DESTACADA EN MEDIO DEL ARTÍCULO.",
-  "publishAt": "",
-  "published": true,
-  "spotifyEmbed": "https://open.spotify.com/embed/album/..."
-}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Artículo — DRKPRTY</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="preload" as="image" href="assets/drkprty-logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Archivo+Black&display=swap" rel="stylesheet">
+
+  <!-- DRKPRTY SEO START -->
+  <meta name="description" content="Lee noticias, reseñas, entrevistas y cultura musical en DRKPRTY.">
+  <meta name="keywords" content="DRKPRTY, drkprty, música, cultura, nightlife, vida nocturna, festivales, reseñas, entrevistas, conciertos, música independiente, cultura underground">
+  <meta name="author" content="DRKPRTY">
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+  <meta name="theme-color" content="#ff0b68">
+  <link rel="canonical" href="https://drkprty.uk/article.html">
+  <meta property="og:locale" content="es_MX">
+  <meta property="og:site_name" content="DRKPRTY">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="Artículo — DRKPRTY">
+  <meta property="og:description" content="Lee noticias, reseñas, entrevistas y cultura musical en DRKPRTY.">
+  <meta property="og:url" content="https://drkprty.uk/article.html">
+  <meta property="og:image" content="https://drkprty.uk/assets/drkprty-logo.png">
+  <meta property="og:image:alt" content="DRKPRTY — Music, Culture & Nightlife">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Artículo — DRKPRTY">
+  <meta name="twitter:description" content="Lee noticias, reseñas, entrevistas y cultura musical en DRKPRTY.">
+  <meta name="twitter:image" content="https://drkprty.uk/assets/drkprty-logo.png">
+  <script type="application/ld+json" id="drkprty-static-schema">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://drkprty.uk/#organization",
+        "name": "DRKPRTY",
+        "url": "https://drkprty.uk/",
+        "logo": "https://drkprty.uk/assets/drkprty-logo.png",
+        "sameAs": []
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://drkprty.uk/#website",
+        "name": "DRKPRTY",
+        "url": "https://drkprty.uk/",
+        "publisher": {"@id": "https://drkprty.uk/#organization"},
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://drkprty.uk/news.html?search={search_term_string}",
+          "query-input": "required name=search_term_string"
+        }
+      }
+    ]
+  }
+  </script>
+  <!-- DRKPRTY SEO END -->
+
+
+  <link rel="icon" href="assets/favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" href="assets/favicon.png">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+  <link rel="manifest" href="site.webmanifest">
+</head>
+<body>
+  <div class="site-loader eye-loader" id="siteLoader" aria-label="Cargando DRKPRTY">
+    <img class="eye-loader__logo" src="assets/drkprty-eye-loader.png" alt="DRKPRTY">
+  </div>
+
+
+  <header class="topbar">
+    <a class="logo" href="index.html">
+      <img class="brand-eye" src="assets/drkprty-logo.png" alt="DRKPRTY">
+      <div>
+        <h1>DRKPRTY</h1>
+        <p>MUSIC · CULTURE · NIGHTLIFE</p>
+      </div>
+    </a>
+
+    <nav class="main-nav">
+      <a href="index.html">Home</a>
+      <a href="news.html">News</a>
+      <a href="news.html?category=RESEÑA">Reviews</a>
+      <a href="news.html?category=ENTREVISTA">Interviews</a>
+      <a href="events.html">Events</a>
+      <a href="about.html">About</a>
+    </nav>
+
+    <div class="actions">
+      <button class="theme-toggle" id="themeToggle" title="Cambiar tema">◐</button>
+      <button class="menu-btn" onclick="toggleMenu()">MENU</button>
+    </div>
+  </header>
+
+  <div class="overlay" id="overlay">
+    <div class="overlay-header">
+      <div>
+        <p>MENU</p>
+        <h2>DRKPRTY</h2>
+      </div>
+      <button onclick="toggleMenu()">✕</button>
+    </div>
+    <div class="overlay-links">
+      <a href="index.html">HOME →</a>
+      <a href="news.html">NEWS →</a>
+      <a href="news.html?category=RESEÑA">REVIEWS →</a>
+      <a href="news.html?category=ENTREVISTA">INTERVIEWS →</a>
+      <a href="events.html">EVENTS →</a>
+      <a href="about.html">ABOUT →</a>
+    </div>
+  </div>
+
+  <div class="hashtag-bar">
+    <div class="hashtag-track" id="hashtagTrack"></div>
+  </div>
+
+  <main class="article-page">
+    <a href="index.html" class="back-link">← VOLVER</a>
+
+    <article class="article-shell" id="articleShell"></article>
+  </main>
+
+  <footer>
+    <h2>DRKPRTY</h2>
+    <p>DRKPRTY 2026 © ALL RIGHTS RESERVED</p>
+  </footer>
+
+  
+  <script src="data.js"></script>
+  <script type="module" src="script.js?v=36"></script>
+</body>
+</html>

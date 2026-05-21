@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Artículo — DRKPRTY</title>
+  <title>About — DRKPRTY</title>
   <link rel="stylesheet" href="styles.css" />
   <link rel="preload" as="image" href="assets/drkprty-logo.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -11,23 +11,23 @@
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Archivo+Black&display=swap" rel="stylesheet">
 
   <!-- DRKPRTY SEO START -->
-  <meta name="description" content="Lee noticias, reseñas, entrevistas y cultura musical en DRKPRTY.">
+  <meta name="description" content="Conoce DRKPRTY: un medio independiente de música, cultura visual, internet, escenas emergentes y vida nocturna.">
   <meta name="keywords" content="DRKPRTY, drkprty, música, cultura, nightlife, vida nocturna, festivales, reseñas, entrevistas, conciertos, música independiente, cultura underground">
   <meta name="author" content="DRKPRTY">
   <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
   <meta name="theme-color" content="#ff0b68">
-  <link rel="canonical" href="https://drkprty.uk/article.html">
+  <link rel="canonical" href="https://drkprty.uk/about.html">
   <meta property="og:locale" content="es_MX">
   <meta property="og:site_name" content="DRKPRTY">
-  <meta property="og:type" content="article">
-  <meta property="og:title" content="Artículo — DRKPRTY">
-  <meta property="og:description" content="Lee noticias, reseñas, entrevistas y cultura musical en DRKPRTY.">
-  <meta property="og:url" content="https://drkprty.uk/article.html">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="About — DRKPRTY">
+  <meta property="og:description" content="Conoce DRKPRTY: un medio independiente de música, cultura visual, internet, escenas emergentes y vida nocturna.">
+  <meta property="og:url" content="https://drkprty.uk/about.html">
   <meta property="og:image" content="https://drkprty.uk/assets/drkprty-logo.png">
   <meta property="og:image:alt" content="DRKPRTY — Music, Culture & Nightlife">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Artículo — DRKPRTY">
-  <meta name="twitter:description" content="Lee noticias, reseñas, entrevistas y cultura musical en DRKPRTY.">
+  <meta name="twitter:title" content="About — DRKPRTY">
+  <meta name="twitter:description" content="Conoce DRKPRTY: un medio independiente de música, cultura visual, internet, escenas emergentes y vida nocturna.">
   <meta name="twitter:image" content="https://drkprty.uk/assets/drkprty-logo.png">
   <script type="application/ld+json" id="drkprty-static-schema">
   {
@@ -71,13 +71,13 @@
 
 
   <header class="topbar">
-    <a class="logo" href="index.html">
+    <div class="logo">
       <img class="brand-eye" src="assets/drkprty-logo.png" alt="DRKPRTY">
       <div>
         <h1>DRKPRTY</h1>
         <p>MUSIC · CULTURE · NIGHTLIFE</p>
       </div>
-    </a>
+    </div>
 
     <nav class="main-nav">
       <a href="index.html">Home</a>
@@ -102,6 +102,7 @@
       </div>
       <button onclick="toggleMenu()">✕</button>
     </div>
+
     <div class="overlay-links">
       <a href="index.html">HOME →</a>
       <a href="news.html">NEWS →</a>
@@ -112,14 +113,45 @@
     </div>
   </div>
 
-  <div class="hashtag-bar">
-    <div class="hashtag-track" id="hashtagTrack"></div>
-  </div>
+  <main class="about-page">
+    <section class="about-hero">
+      <div>
+        <p class="tiny">ABOUT · DRKPRTY</p>
+        <h1>Music, culture and signals from the dark side of the internet.</h1>
+      </div>
+      <img src="assets/drkprty-logo.png" alt="DRKPRTY">
+    </section>
 
-  <main class="article-page">
-    <a href="index.html" class="back-link">← VOLVER</a>
+    <section class="about-grid">
+      <article class="about-card">
+        <span>01</span>
+        <h2>Quiénes somos</h2>
+        <p>DRKPRTY es un medio digital independiente dedicado a seguir las señales que conectan música, cultura visual, internet, escenas emergentes, festivales y vida nocturna.</p>
+        <p>No buscamos cubrirlo todo. Buscamos detectar lo que se mueve, lo que suena distinto y lo que empieza a formar conversación antes de volverse obvio.</p>
+      </article>
 
-    <article class="article-shell" id="articleShell"></article>
+      <article class="about-card">
+        <span>02</span>
+        <h2>Misión</h2>
+        <p>Crear una plataforma editorial con identidad propia para descubrir lanzamientos, reseñas, entrevistas, conciertos, artistas y fenómenos culturales que viven entre lo alternativo, lo pop y lo digital.</p>
+        <p>Queremos contar la música como cultura viva: no solo como noticia, sino como estética, comunidad, archivo, escena y experiencia.</p>
+      </article>
+
+      <article class="about-card">
+        <span>03</span>
+        <h2>Visión</h2>
+        <p>Convertirnos en un punto de encuentro para quienes escuchan, crean, escriben, fotografían, mezclan, programan, producen y viven la música desde una sensibilidad contemporánea.</p>
+        <p>DRKPRTY quiere ser un radar cultural: una señal nocturna para encontrar lo próximo.</p>
+      </article>
+
+      <article class="about-card submit-card">
+        <span>04</span>
+        <h2>Publica con nosotros</h2>
+        <p>¿Tienes una reseña, crónica, entrevista, fotoensayo, playlist, columna o texto sobre una escena local? Queremos leerlo.</p>
+        <p>Envía tu propuesta con título, texto breve, autoría, links de referencia e imágenes disponibles. Si encaja con la línea editorial, podrá publicarse en DRKPRTY.</p>
+        <a class="about-submit" href="mailto:hola@drkprty.com?subject=Propuesta editorial para DRKPRTY">MANDAR ARTÍCULO →</a>
+      </article>
+    </section>
   </main>
 
   <footer>
@@ -127,7 +159,6 @@
     <p>DRKPRTY 2026 © ALL RIGHTS RESERVED</p>
   </footer>
 
-  
   <script src="data.js"></script>
   <script type="module" src="script.js?v=36"></script>
 </body>
