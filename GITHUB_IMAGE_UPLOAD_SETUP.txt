@@ -1,20 +1,20 @@
-DRKPRTY GitHub Content Setup
+# DRKPRTY — Firebase Storage Setup
 
-Destino actual del admin:
-- Owner: drkprty
-- Repo: content
-- Branch: main
-- Images path: images
-- Articles path: articles
-- Public base URL: https://cdn.jsdelivr.net/gh/drkprty/content@main
+Para que el campo "Subir imagen a Firebase Storage" funcione:
 
-Token recomendado:
-- GitHub Fine-grained personal access token
-- Repository access: Only selected repositories -> drkprty/content
-- Repository permissions: Contents -> Read and Write
+1. Entra a Firebase Console.
+2. Ve a Build > Storage.
+3. Crea el bucket si aún no existe.
+4. Ve a Rules.
+5. Pega el contenido de `storage.rules`.
+6. Publica las reglas.
 
-Importante:
-- Si el repo content está completamente vacío, crea un README inicial para que exista la branch main.
-- El token se guarda solo en localStorage del navegador del admin. No se sube al repo.
-- Al guardar un artículo, el admin guarda en Firebase y también crea/actualiza articles/<slug>.json en drkprty/content.
-- Si seleccionas un archivo de imagen, lo sube a images/<slug>-timestamp.ext y reemplaza el campo de imagen con URL CDN.
+Después:
+- En Admin > Artículos puedes elegir una imagen desde tu computadora.
+- Al guardar, el admin sube la imagen a Firebase Storage.
+- La URL pública se guarda automáticamente en el campo `image` del artículo en Firestore.
+
+Notas:
+- Las imágenes se guardan en la carpeta `articles/`.
+- El límite configurado es 10 MB por imagen.
+- Para SEO/social preview, después podemos agregar campos `imageAlt`, `seoTitle`, `seoDescription` y meta tags dinámicos.

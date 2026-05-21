@@ -1,63 +1,12 @@
-# Órbita v25 — Firebase Firestore CMS
-
-## Qué cambia
-- El admin ya guarda en Firebase Firestore.
-- El sitio público lee artículos, eventos y configuración del hero desde Firestore.
-- `data.js` queda como respaldo inicial/fallback.
-- GitHub Pages solo aloja los archivos del sitio; el contenido vive en Firebase.
-
-## Collections creadas/usadas
-
-### articles
-Cada documento usa como ID el slug del artículo.
-
-Campos principales:
-- id
-- title
-- category
-- date
-- read
-- author
-- image
-- excerpt
-- tags
-- body
-- quote
-- createdAt
-- publishAt
-- published
-
-### events
-Cada documento usa como ID el slug del evento.
-
-Campos:
-- id
-- day
-- month
-- title
-- venue
-- type
-- sortDate
-
-### siteConfig / hero
-Documento:
-- featured
-- autoFeatured
-- topics
-- rotation
-
-## Instrucciones en Firebase
-
-1. En Firebase Console entra a tu proyecto.
-2. Ve a Build > Firestore Database.
-3. Crea la base de datos.
-4. Inicia en modo production.
-5. Ve a Rules y pega el contenido de `firestore.rules`.
-6. Publica las reglas.
-7. Verifica que Authentication > Email/Password esté activo.
-8. Entra a `/admin/` desde tu GitHub Pages.
-9. Inicia sesión con el email/password del usuario de Firebase Auth.
-10. Al entrar por primera vez, si Firestore está vacío, el admin sembrará artículos de `data.js` y eventos demo.
-
-## Importante
-Las imágenes todavía se guardan como URL. Lo ideal después es conectar Firebase Storage o Cloudinary para subir imágenes desde el admin.
+<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>DRKPRTY Debug</title>
+  <link rel="icon" href="assets/favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" href="assets/favicon.png">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+</head><body style="background:#050505;color:#fff;font-family:system-ui;padding:24px"><h1>DRKPRTY Firebase Debug</h1><pre id="out">Cargando...</pre><script type="module">
+import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import{getFirestore,collection,getDocs,doc,getDoc}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+const contentFirebaseConfig={apiKey:"AIzaSyBF7dI6cLaec1hMO6sRYyKTbgmhptq0OEM",authDomain:"orbita-727cd.firebaseapp.com",projectId:"orbita-727cd",storageBucket:"orbita-727cd.firebasestorage.app",messagingSenderId:"823174769372",appId:"1:823174769372:web:c0b62f90917c035dbb6219"};
+const statsFirebaseConfig={apiKey:"AIzaSyBxChWYQYJIfdzCe4HL51x8oGixcvLAxJw",authDomain:"drkprty-654ec.firebaseapp.com",projectId:"drkprty-654ec",storageBucket:"drkprty-654ec.firebasestorage.app",messagingSenderId:"17948730429",appId:"1:17948730429:web:917b9d10f70439c54c3654",measurementId:"G-8TZ70MZQFM"};
+function parse(v){if(!v)return null;if(typeof v==="object"&&typeof v.toDate==="function")return v.toDate().toISOString();return String(v)}
+try{const contentApp=initializeApp(contentFirebaseConfig,"debug-content");const statsApp=initializeApp(statsFirebaseConfig,"debug-stats");const db=getFirestore(contentApp);const statsDb=getFirestore(statsApp);const a=await getDocs(collection(db,"articles"));const e=await getDocs(collection(db,"events"));const h=await getDoc(doc(db,"siteConfig","hero"));let statsInfo={ok:false,error:null,size:0};try{const st=await getDocs(collection(statsDb,"articleStats"));statsInfo={ok:true,size:st.size};}catch(err){statsInfo={ok:false,error:err.code+": "+err.message};}document.getElementById("out").textContent=JSON.stringify({contentProject:contentFirebaseConfig.projectId,statsProject:statsFirebaseConfig.projectId,articles:a.size,events:e.size,stats:statsInfo,hero:h.exists()?h.data():null,sample:a.docs.slice(0,10).map(d=>({id:d.id,title:d.data().title,published:d.data().published,publishAt:parse(d.data().publishAt),category:d.data().category}))},null,2)}catch(err){document.getElementById("out").textContent=err.stack||String(err)}
+</script></body></html>

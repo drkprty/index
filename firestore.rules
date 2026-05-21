@@ -1,55 +1,63 @@
-rules_version = '2';
+# Órbita v25 — Firebase Firestore CMS
 
-service cloud.firestore {
-  match /databases/{database}/documents {
+## Qué cambia
+- El admin ya guarda en Firebase Firestore.
+- El sitio público lee artículos, eventos y configuración del hero desde Firestore.
+- `data.js` queda como respaldo inicial/fallback.
+- GitHub Pages solo aloja los archivos del sitio; el contenido vive en Firebase.
 
-    match /articleStats/{articleId} {
-      allow read: if true;
+## Collections creadas/usadas
 
-      allow create: if
-        request.resource.data.keys().hasOnly(["articleId", "views", "dailyViews", "updatedAt"]) &&
-        request.resource.data.articleId is string &&
-        request.resource.data.views is int &&
-        request.resource.data.views >= 1 &&
-        request.resource.data.dailyViews is map;
+### articles
+Cada documento usa como ID el slug del artículo.
 
-      allow update: if
-        request.resource.data.keys().hasOnly(["articleId", "views", "dailyViews", "updatedAt"]) &&
-        request.resource.data.articleId is string &&
-        request.resource.data.views is int &&
-        request.resource.data.views >= resource.data.views &&
-        request.resource.data.dailyViews is map;
-    }
+Campos principales:
+- id
+- title
+- category
+- date
+- read
+- author
+- image
+- excerpt
+- tags
+- body
+- quote
+- createdAt
+- publishAt
+- published
 
-    match /articleViewsDaily/{dailyId} {
-      allow read: if true;
+### events
+Cada documento usa como ID el slug del evento.
 
-      allow create: if
-        request.resource.data.keys().hasOnly(["articleId", "date", "views", "updatedAt"]) &&
-        request.resource.data.articleId is string &&
-        request.resource.data.date is string &&
-        request.resource.data.views is int &&
-        request.resource.data.views >= 1;
+Campos:
+- id
+- day
+- month
+- title
+- venue
+- type
+- sortDate
 
-      allow update: if
-        request.resource.data.keys().hasOnly(["articleId", "date", "views", "updatedAt"]) &&
-        request.resource.data.articleId is string &&
-        request.resource.data.date is string &&
-        request.resource.data.views is int &&
-        request.resource.data.views >= resource.data.views;
-    }
+### siteConfig / hero
+Documento:
+- featured
+- autoFeatured
+- topics
+- rotation
 
-    match /newsletterSubscribers/{subscriberId} {
-      allow create: if
-        request.resource.data.keys().hasOnly(["email", "createdAt"]) &&
-        request.resource.data.email is string;
+## Instrucciones en Firebase
 
-      allow read, update, delete: if false;
-    }
+1. En Firebase Console entra a tu proyecto.
+2. Ve a Build > Firestore Database.
+3. Crea la base de datos.
+4. Inicia en modo production.
+5. Ve a Rules y pega el contenido de `firestore.rules`.
+6. Publica las reglas.
+7. Verifica que Authentication > Email/Password esté activo.
+8. Entra a `/admin/` desde tu GitHub Pages.
+9. Inicia sesión con el email/password del usuario de Firebase Auth.
+10. Al entrar por primera vez, si Firestore está vacío, el admin sembrará artículos de `data.js` y eventos demo.
 
-    match /{document=**} {
-      allow read: if true;
-      allow write: if false;
-    }
-  }
-}
+## Importante
+Las imágenes todavía se guardan como URL. Lo ideal después es conectar Firebase Storage o Cloudinary para subir imágenes desde el admin.
