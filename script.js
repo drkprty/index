@@ -633,12 +633,45 @@ window.drkprtyTestViewWrite = async function(articleId = "manual-test"){
   await countArticleView(articleId);
 };
 
+function shortCodeDate(article){
+  const raw = article?.publishAt || article?.date || article?.createdAt || new Date().toISOString();
+  const parsed = raw instanceof Date ? raw : new Date(raw);
+  const date = Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+  const dd = String(date.getDate()).padStart(2, "0");
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  return `${dd}${mm}`;
+}
+
+function firstMeaningfulTitleToken(title){
+  const ignored = new Set(["el","la","los","las","un","una","unos","unas","de","del","y","en","con","para","por","the","a","an","of","and","to","on","at","new","nuevo","nueva"]);
+  return String(title || "drkprty")
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean)
+    .find(word => !ignored.has(word)) || "drkprty";
+}
+
+function buildArticleShortCode(article){
+  const baseSource = Array.isArray(article?.tags) && article.tags.length ? article.tags[0] : firstMeaningfulTitleToken(article?.title);
+  const base = String(baseSource || "drkprty")
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "")
+    .slice(0, 18) || "drkprty";
+  return `${base}${shortCodeDate(article)}`;
+}
+
+function getArticleShortCode(article){
+  return article?.shortCode || buildArticleShortCode(article);
+}
+
 function getArticleShareUrl(article){
+  const shortCode = getArticleShortCode(article);
+  if(shortCode) return `${DRKPRTY_SITE_URL}/go/${encodeURIComponent(shortCode)}/`;
   if(article?.shortUrl) return article.shortUrl;
-  if(article?.shortCode) return `${window.location.origin}/go/${encodeURIComponent(article.shortCode)}/`;
   if(article?.seoUrl) return article.seoUrl;
-  const base = window.location.origin + window.location.pathname;
-  const url = new URL(base);
+  const url = new URL(`${DRKPRTY_SITE_URL}/article.html`);
   if(article?.id) url.searchParams.set("id", article.id);
   return url.toString();
 }
@@ -704,7 +737,7 @@ function renderArticlePage(){
   const shareUrl = getArticleShareUrl(article);
   const shareText = buildArticleShareText(article);
   const xShareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
-  const fbShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
+  const fbShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(shareText)}`;
   const waShareUrl = `https://wa.me/?text=${encodeURIComponent(`${shareText} ${shareUrl}`)}`;
 
   shell.innerHTML = `
