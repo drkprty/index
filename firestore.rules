@@ -1,20 +1,55 @@
-# DRKPRTY — Firebase Storage Setup
+rules_version = '2';
 
-Para que el campo "Subir imagen a Firebase Storage" funcione:
+service cloud.firestore {
+  match /databases/{database}/documents {
 
-1. Entra a Firebase Console.
-2. Ve a Build > Storage.
-3. Crea el bucket si aún no existe.
-4. Ve a Rules.
-5. Pega el contenido de `storage.rules`.
-6. Publica las reglas.
+    match /articleStats/{articleId} {
+      allow read: if true;
 
-Después:
-- En Admin > Artículos puedes elegir una imagen desde tu computadora.
-- Al guardar, el admin sube la imagen a Firebase Storage.
-- La URL pública se guarda automáticamente en el campo `image` del artículo en Firestore.
+      allow create: if
+        request.resource.data.keys().hasOnly(["articleId", "views", "dailyViews", "updatedAt"]) &&
+        request.resource.data.articleId is string &&
+        request.resource.data.views is int &&
+        request.resource.data.views >= 1 &&
+        request.resource.data.dailyViews is map;
 
-Notas:
-- Las imágenes se guardan en la carpeta `articles/`.
-- El límite configurado es 10 MB por imagen.
-- Para SEO/social preview, después podemos agregar campos `imageAlt`, `seoTitle`, `seoDescription` y meta tags dinámicos.
+      allow update: if
+        request.resource.data.keys().hasOnly(["articleId", "views", "dailyViews", "updatedAt"]) &&
+        request.resource.data.articleId is string &&
+        request.resource.data.views is int &&
+        request.resource.data.views >= resource.data.views &&
+        request.resource.data.dailyViews is map;
+    }
+
+    match /articleViewsDaily/{dailyId} {
+      allow read: if true;
+
+      allow create: if
+        request.resource.data.keys().hasOnly(["articleId", "date", "views", "updatedAt"]) &&
+        request.resource.data.articleId is string &&
+        request.resource.data.date is string &&
+        request.resource.data.views is int &&
+        request.resource.data.views >= 1;
+
+      allow update: if
+        request.resource.data.keys().hasOnly(["articleId", "date", "views", "updatedAt"]) &&
+        request.resource.data.articleId is string &&
+        request.resource.data.date is string &&
+        request.resource.data.views is int &&
+        request.resource.data.views >= resource.data.views;
+    }
+
+    match /newsletterSubscribers/{subscriberId} {
+      allow create: if
+        request.resource.data.keys().hasOnly(["email", "createdAt"]) &&
+        request.resource.data.email is string;
+
+      allow read, update, delete: if false;
+    }
+
+    match /{document=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+  }
+}

@@ -498,6 +498,16 @@ function getGitHubImageConfig(){
   };
 }
 
+function getGitHubSiteConfig(){
+  const contentCfg = getGitHubImageConfig();
+  return {
+    owner: localStorage.getItem("drkprty-github-site-owner") || "drkprty",
+    repo: localStorage.getItem("drkprty-github-site-repo") || "index",
+    branch: localStorage.getItem("drkprty-github-site-branch") || contentCfg.branch || "main",
+    token: contentCfg.token
+  };
+}
+
 function textToBase64(text){
   return btoa(unescape(encodeURIComponent(String(text || ""))));
 }
@@ -519,8 +529,8 @@ async function githubGetFileSha(apiUrl, token){
   return data?.sha || null;
 }
 
-async function githubPutFile(repoPath, contentBase64, message){
-  const cfg = getGitHubImageConfig();
+async function githubPutFile(repoPath, contentBase64, message, overrideCfg = null){
+  const cfg = overrideCfg || getGitHubImageConfig();
   if(!cfg.token) throw new Error("Missing GitHub token");
 
   const cleanRepoPath = String(repoPath || "").replace(/^\/|\/$/g, "");
@@ -530,7 +540,7 @@ async function githubPutFile(repoPath, contentBase64, message){
   const body = {
     message,
     content:contentBase64,
-    branch:cfg.branch
+    branch:cfg.branch || "main"
   };
   if(sha) body.sha = sha;
 
@@ -548,9 +558,10 @@ async function githubPutFile(repoPath, contentBase64, message){
   if(!res.ok){
     const detail = await res.text();
     let hint = "";
-    if(res.status === 401 || res.status === 403) hint = "\n\nRevisa que el token tenga permisos Contents: Read and Write para drkprty/content.";
-    if(res.status === 404) hint = "\n\nRevisa Owner/Repo/Branch. Debe ser drkprty/content en branch main.";
-    if(res.status === 422) hint = "\n\nSi el repo content está completamente vacío, crea primero un README en GitHub para que exista la branch main.";
+    const repoLabel = `${cfg.owner}/${cfg.repo}`;
+    if(res.status === 401 || res.status === 403) hint = `\n\nRevisa que el token tenga permisos Contents: Read and Write para ${repoLabel}.`;
+    if(res.status === 404) hint = `\n\nRevisa Owner/Repo/Branch. Actual: ${repoLabel} en branch ${cfg.branch || "main"}.`;
+    if(res.status === 422) hint = `\n\nSi el repo ${repoLabel} está completamente vacío, crea primero un README en GitHub para que exista la branch ${cfg.branch || "main"}.`;
     throw new Error(`GitHub save failed: ${res.status} ${detail}${hint}`);
   }
 
@@ -601,20 +612,191 @@ async function saveArticlesIndexToGitHub(){
   return repoPath;
 }
 
+
+function escapeHtml(value){
+  return String(value || "")
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#039;");
+}
+
+function escapeJsonScript(value){
+  return JSON.stringify(value || "").replace(/<\//g,"<\\/");
+}
+
+function absoluteSiteUrl(path = "/"){
+  const clean = String(path || "/");
+  if(/^https?:\/\//i.test(clean)) return clean;
+  return `https://drkprty.uk${clean.startsWith("/") ? clean : `/${clean}`}`;
+}
+
+function isPublishedForGitHubExport(article){
+  if(!article) return false;
+  const published = article.published === true || String(article.published).toLowerCase() === "true";
+  if(!published) return false;
+  const publishTime = parsePublishTime(article.publishAt);
+  return !publishTime || publishTime <= Date.now();
+}
+
+function shortCodeDate(article){
+  const raw = article.publishAt || article.date || article.createdAt || new Date().toISOString();
+  const d = raw instanceof Date ? raw : new Date(raw);
+  const date = Number.isNaN(d.getTime()) ? new Date() : d;
+  const dd = String(date.getDate()).padStart(2,"0");
+  const mm = String(date.getMonth()+1).padStart(2,"0");
+  return `${dd}${mm}`;
+}
+
+function firstMeaningfulTitleToken(title){
+  const ignored = new Set(["el","la","los","las","un","una","unos","unas","de","del","y","en","con","para","por","the","a","an","of","and","to","on","at","new","nuevo","nueva"]);
+  return String(title || "drkprty")
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean)
+    .find(word => !ignored.has(word)) || "drkprty";
+}
+
+function buildArticleShortCode(article){
+  const baseSource = Array.isArray(article.tags) && article.tags.length ? article.tags[0] : firstMeaningfulTitleToken(article.title);
+  const base = String(baseSource || "drkprty")
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+    .replace(/[^a-z0-9]+/g,"")
+    .slice(0,18) || "drkprty";
+  return `${base}${shortCodeDate(article)}`;
+}
+
+function ensureArticleShareFields(article){
+  const shortCode = article.shortCode || buildArticleShortCode(article);
+  return {
+    ...article,
+    shortCode,
+    shortUrl: absoluteSiteUrl(`/go/${shortCode}/`),
+    seoUrl: absoluteSiteUrl(`/articles/${safeFileName(article.id)}.html`)
+  };
+}
+
+function buildStaticArticleHtml(article){
+  const title = article.title || "DRKPRTY";
+  const desc = article.excerpt || "Music, culture & nightlife.";
+  const image = article.image || absoluteSiteUrl("/assets/drkprty-eye-logo.png");
+  const articleUrl = absoluteSiteUrl(`/article.html?id=${encodeURIComponent(article.id)}`);
+  const seoUrl = article.seoUrl || absoluteSiteUrl(`/articles/${safeFileName(article.id)}.html`);
+  const published = article.publishAt || article.createdAt || new Date().toISOString();
+  const modified = new Date().toISOString();
+  const schema = {
+    "@context":"https://schema.org",
+    "@type":"NewsArticle",
+    headline:title,
+    description:desc,
+    image:[image],
+    datePublished:published,
+    dateModified:modified,
+    author:{"@type":"Organization",name:"DRKPRTY"},
+    publisher:{"@type":"Organization",name:"DRKPRTY",logo:{"@type":"ImageObject",url:absoluteSiteUrl("/assets/drkprty-eye-logo.png")}},
+    mainEntityOfPage:seoUrl
+  };
+  return `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${escapeHtml(title)} — DRKPRTY</title>
+  <meta name="description" content="${escapeHtml(desc)}">
+  <link rel="canonical" href="${escapeHtml(seoUrl)}">
+  <meta property="og:site_name" content="DRKPRTY">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="${escapeHtml(title)}">
+  <meta property="og:description" content="${escapeHtml(desc)}">
+  <meta property="og:url" content="${escapeHtml(seoUrl)}">
+  <meta property="og:image" content="${escapeHtml(image)}">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="${escapeHtml(title)}">
+  <meta name="twitter:description" content="${escapeHtml(desc)}">
+  <meta name="twitter:image" content="${escapeHtml(image)}">
+  <script type="application/ld+json">${escapeJsonScript(schema)}</script>
+  <script>window.location.replace(${JSON.stringify(articleUrl)});</script>
+</head>
+<body>
+  <p>Redirigiendo a <a href="${escapeHtml(articleUrl)}">${escapeHtml(title)}</a>...</p>
+</body>
+</html>`;
+}
+
+function buildShortlinkHtml(article){
+  const title = article.title || "DRKPRTY";
+  const desc = article.excerpt || "Music, culture & nightlife.";
+  const image = article.image || absoluteSiteUrl("/assets/drkprty-eye-logo.png");
+  const shortUrl = article.shortUrl || absoluteSiteUrl(`/go/${article.shortCode}/`);
+  const articleUrl = absoluteSiteUrl(`/article.html?id=${encodeURIComponent(article.id)}`);
+  return `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${escapeHtml(title)} — DRKPRTY</title>
+  <meta name="description" content="${escapeHtml(desc)}">
+  <link rel="canonical" href="${escapeHtml(shortUrl)}">
+  <meta property="og:site_name" content="DRKPRTY">
+  <meta property="og:type" content="article">
+  <meta property="og:title" content="${escapeHtml(title)}">
+  <meta property="og:description" content="${escapeHtml(desc)}">
+  <meta property="og:url" content="${escapeHtml(shortUrl)}">
+  <meta property="og:image" content="${escapeHtml(image)}">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="${escapeHtml(title)}">
+  <meta name="twitter:description" content="${escapeHtml(desc)}">
+  <meta name="twitter:image" content="${escapeHtml(image)}">
+  <script>window.location.replace(${JSON.stringify(articleUrl)});</script>
+</head>
+<body>
+  <p>Redirigiendo a <a href="${escapeHtml(articleUrl)}">${escapeHtml(title)}</a>...</p>
+</body>
+</html>`;
+}
+
+function buildSitemapXml(){
+  const urls = [
+    { loc:absoluteSiteUrl("/"), lastmod:new Date().toISOString() },
+    { loc:absoluteSiteUrl("/news.html"), lastmod:new Date().toISOString() },
+    { loc:absoluteSiteUrl("/events.html"), lastmod:new Date().toISOString() },
+    ...articles.filter(isPublishedForGitHubExport).map(a => ({ loc:absoluteSiteUrl(`/articles/${safeFileName(a.id)}.html`), lastmod:a.updatedAt || a.createdAt || new Date().toISOString() }))
+  ];
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map(u=>`  <url><loc>${escapeHtml(u.loc)}</loc><lastmod>${escapeHtml(u.lastmod)}</lastmod></url>`).join("\n")}\n</urlset>\n`;
+}
+
+async function saveStaticShareFilesToGitHub(article){
+  if(!isPublishedForGitHubExport(article)) return { skipped:true, reason:"not-published" };
+  const siteCfg = getGitHubSiteConfig();
+  if(!siteCfg.token) return { skipped:true, reason:"missing-token" };
+  const cleanArticle = ensureArticleShareFields(article);
+  const articlePath = `articles/${safeFileName(cleanArticle.id)}.html`;
+  const shortlinkPath = `go/${safeFileName(cleanArticle.shortCode)}/index.html`;
+  const sitemapPath = `sitemap.xml`;
+  await githubPutFile(articlePath, textToBase64(buildStaticArticleHtml(cleanArticle)), `Generate SEO article page: ${cleanArticle.id}`, siteCfg);
+  await githubPutFile(shortlinkPath, textToBase64(buildShortlinkHtml(cleanArticle)), `Generate shortlink: ${cleanArticle.shortCode}`, siteCfg);
+  await githubPutFile(sitemapPath, textToBase64(buildSitemapXml()), "Update sitemap", siteCfg);
+  return { skipped:false, articlePath, shortlinkPath, sitemapPath };
+}
+
 async function saveArticleJsonToGitHub(article){
   const cfg = getGitHubImageConfig();
   if(!cfg.token) return { skipped:true, reason:"missing-token" };
 
-  const cleanArticle = articleForGitHub(article);
+  const cleanArticle = articleForGitHub(ensureArticleShareFields(article));
   if(!cleanArticle.id) throw new Error("No se puede guardar en GitHub: el artículo no tiene slug/id.");
 
   const repoPath = githubArticleRepoPath(cleanArticle);
   const json = JSON.stringify(cleanArticle, null, 2);
   await githubPutFile(repoPath, textToBase64(json), `Save article JSON: ${cleanArticle.id}`);
   const indexPath = await saveArticlesIndexToGitHub();
+  const staticResult = await saveStaticShareFilesToGitHub(cleanArticle);
 
-  console.info("DRKPRTY GitHub article saved", { repoPath, indexPath });
-  return { skipped:false, repoPath, indexPath };
+  console.info("DRKPRTY GitHub article saved", { repoPath, indexPath, staticResult });
+  return { skipped:false, repoPath, indexPath, staticResult };
 }
 
 function fileToBase64(file){
@@ -1157,7 +1339,7 @@ $("articleForm").addEventListener("submit", async e=>{
   const publishTime = parsePublishTime($("articlePublishAt").value);
   const shouldSchedule = !!(publishTime && publishTime > Date.now() && $("articlePublished").checked);
 
-  const article = {
+  let article = {
     id,
     title:$("articleTitle").value,
     category:$("articleCategory").value,
@@ -1175,6 +1357,8 @@ $("articleForm").addEventListener("submit", async e=>{
     scheduled: shouldSchedule,
     spotifyEmbed:$("articleSpotifyEmbed").value
   };
+
+  article = ensureArticleShareFields(article);
 
   const idx = articles.findIndex(a=>a.id===id);
   if(idx >= 0) articles[idx] = article;

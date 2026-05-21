@@ -1,55 +1,204 @@
-rules_version = '2';
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>DRKPRTY — Music, Culture & Nightlife</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="preload" as="image" href="assets/drkprty-logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Archivo+Black&display=swap" rel="stylesheet">
 
-service cloud.firestore {
-  match /databases/{database}/documents {
-
-    match /articleStats/{articleId} {
-      allow read: if true;
-
-      allow create: if
-        request.resource.data.keys().hasOnly(["articleId", "views", "dailyViews", "updatedAt"]) &&
-        request.resource.data.articleId is string &&
-        request.resource.data.views is int &&
-        request.resource.data.views >= 1 &&
-        request.resource.data.dailyViews is map;
-
-      allow update: if
-        request.resource.data.keys().hasOnly(["articleId", "views", "dailyViews", "updatedAt"]) &&
-        request.resource.data.articleId is string &&
-        request.resource.data.views is int &&
-        request.resource.data.views >= resource.data.views &&
-        request.resource.data.dailyViews is map;
-    }
-
-    match /articleViewsDaily/{dailyId} {
-      allow read: if true;
-
-      allow create: if
-        request.resource.data.keys().hasOnly(["articleId", "date", "views", "updatedAt"]) &&
-        request.resource.data.articleId is string &&
-        request.resource.data.date is string &&
-        request.resource.data.views is int &&
-        request.resource.data.views >= 1;
-
-      allow update: if
-        request.resource.data.keys().hasOnly(["articleId", "date", "views", "updatedAt"]) &&
-        request.resource.data.articleId is string &&
-        request.resource.data.date is string &&
-        request.resource.data.views is int &&
-        request.resource.data.views >= resource.data.views;
-    }
-
-    match /newsletterSubscribers/{subscriberId} {
-      allow create: if
-        request.resource.data.keys().hasOnly(["email", "createdAt"]) &&
-        request.resource.data.email is string;
-
-      allow read, update, delete: if false;
-    }
-
-    match /{document=**} {
-      allow read: if true;
-      allow write: if false;
-    }
+  <!-- DRKPRTY SEO START -->
+  <meta name="description" content="DRKPRTY es un medio independiente de música, cultura, vida nocturna, reseñas, entrevistas, festivales y escenas emergentes.">
+  <meta name="keywords" content="DRKPRTY, drkprty, música, cultura, nightlife, vida nocturna, festivales, reseñas, entrevistas, conciertos, música independiente, cultura underground">
+  <meta name="author" content="DRKPRTY">
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+  <meta name="theme-color" content="#ff0b68">
+  <link rel="canonical" href="https://drkprty.uk/">
+  <meta property="og:locale" content="es_MX">
+  <meta property="og:site_name" content="DRKPRTY">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="DRKPRTY — Music, Culture & Nightlife">
+  <meta property="og:description" content="DRKPRTY es un medio independiente de música, cultura, vida nocturna, reseñas, entrevistas, festivales y escenas emergentes.">
+  <meta property="og:url" content="https://drkprty.uk/">
+  <meta property="og:image" content="https://drkprty.uk/assets/drkprty-logo.png">
+  <meta property="og:image:alt" content="DRKPRTY — Music, Culture & Nightlife">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="DRKPRTY — Music, Culture & Nightlife">
+  <meta name="twitter:description" content="DRKPRTY es un medio independiente de música, cultura, vida nocturna, reseñas, entrevistas, festivales y escenas emergentes.">
+  <meta name="twitter:image" content="https://drkprty.uk/assets/drkprty-logo.png">
+  <script type="application/ld+json" id="drkprty-static-schema">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://drkprty.uk/#organization",
+        "name": "DRKPRTY",
+        "url": "https://drkprty.uk/",
+        "logo": "https://drkprty.uk/assets/drkprty-logo.png",
+        "sameAs": []
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://drkprty.uk/#website",
+        "name": "DRKPRTY",
+        "url": "https://drkprty.uk/",
+        "publisher": {"@id": "https://drkprty.uk/#organization"},
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://drkprty.uk/news.html?search={search_term_string}",
+          "query-input": "required name=search_term_string"
+        }
+      }
+    ]
   }
-}
+  </script>
+  <!-- DRKPRTY SEO END -->
+
+
+  <link rel="icon" href="assets/favicon.ico" sizes="any">
+  <link rel="icon" type="image/png" href="assets/favicon.png">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+  <link rel="manifest" href="site.webmanifest">
+</head>
+<body>
+  <div class="site-loader eye-loader" id="siteLoader" aria-label="Cargando DRKPRTY">
+    <img class="eye-loader__logo" src="assets/drkprty-eye-loader.png" alt="DRKPRTY">
+  </div>
+
+
+  <header class="topbar">
+    <div class="logo">
+      <img class="brand-eye" src="assets/drkprty-logo.png" alt="DRKPRTY">
+      <div>
+        <h1>DRKPRTY</h1>
+        <p>MUSIC · CULTURE · NIGHTLIFE</p>
+      </div>
+    </div>
+
+    <nav class="main-nav">
+      <a href="index.html">Home</a>
+      <a href="news.html">News</a>
+      <a href="news.html?category=RESEÑA">Reviews</a>
+      <a href="news.html?category=ENTREVISTA">Interviews</a>
+      <a href="events.html">Events</a>
+      <a href="about.html">About</a>
+    </nav>
+
+    <div class="actions">
+      <button class="theme-toggle" id="themeToggle" title="Cambiar tema">◐</button>
+      <button class="menu-btn" onclick="toggleMenu()">MENU</button>
+    </div>
+  </header>
+
+  <div class="overlay" id="overlay">
+    <div class="overlay-header">
+      <div>
+        <p>MENU</p>
+        <h2>DRKPRTY</h2>
+      </div>
+      <button onclick="toggleMenu()">✕</button>
+    </div>
+
+    <div class="overlay-links">
+      <a href="index.html">HOME →</a>
+      <a href="news.html">NEWS →</a>
+      <a href="news.html?category=RESEÑA">REVIEWS →</a>
+      <a href="news.html?category=ENTREVISTA">INTERVIEWS →</a>
+      <a href="events.html">EVENTS →</a>
+      <a href="about.html">ABOUT →</a>
+    </div>
+  </div>
+
+  <div class="hashtag-bar" id="tags">
+    <div class="hashtag-track" id="hashtagTrack"></div>
+  </div>
+
+  <main>
+
+    <section class="featured-layout">
+      <section class="featured-carousel" id="featuredCarousel">
+        <div class="featured-track" id="featuredTrack"></div>
+
+        <div class="carousel-controls">
+          <button type="button" id="prevFeatured">←</button>
+          <div class="carousel-dots" id="featuredDots"></div>
+          <button type="button" id="nextFeatured">→</button>
+        </div>
+      </section>
+
+      <aside class="events-panel">
+        <div class="agenda-title">
+          <span>EVENTOS</span>
+          <h3>PRÓXIMOS EVENTOS</h3>
+        </div>
+
+        <div class="events-list"></div>
+
+        <a class="events-more" href="events.html">VER MÁS EVENTOS →</a>
+      </aside>
+    </section>
+
+    <section class="topics news-list-section">
+      <div class="section-title">
+        <p>（NUEVO & UPDATE）</p>
+        <h2>NEW TOPICS</h2>
+      </div>
+
+      <div id="articleGrid" class="article-grid news-card-list"></div>
+      <p class="empty-state" id="emptyState">No hay artículos con ese hashtag todavía.</p>
+
+      <div class="more-news-wrap">
+        <a class="more-news-btn" href="news.html">VER MÁS NOTICIAS →</a>
+      </div>
+    </section>
+
+    <section class="rotation now-playing-section">
+      <div class="section-title">
+        <p>CURADURÍA · PICKS · PLAYLIST</p>
+        <h2>EN ROTACIÓN</h2>
+      </div>
+
+      <div class="now-playing-grid">
+        <article class="now-main empty-rotation" id="rotationViewer">
+          <div class="cover-art" id="rotationCover"></div>
+          <div>
+            <span id="rotationLabel">EN ROTACIÓN</span>
+            <h3 id="rotationTitle">Sin selección</h3>
+            <p id="rotationArtist">Agrega reseñas desde el administrador</p>
+            <small id="rotationDesc">Aquí aparecerán tus picks editoriales cuando los configures.</small>
+            <a id="rotationRead" class="rotation-read-btn" href="#">LEER →</a>
+          </div>
+        </article>
+
+        <div class="track-list rotation-selector" id="rotationSelector"></div>
+      </div>
+    </section>
+
+    <section class="newsletter-block">
+      <div>
+        <p>NEWSLETTER</p>
+        <h2>RECIBE EL RUIDO IMPORTANTE</h2>
+        <span>Una selección semanal de lanzamientos, conciertos, escenas y hallazgos raros.</span>
+      </div>
+      <form>
+        <input type="email" placeholder="tu@email.com">
+        <button type="button">UNIRME →</button>
+      </form>
+    </section>
+
+  </main>
+
+  <footer>
+    <h2>DRKPRTY</h2>
+    <p>DRKPRTY 2026 © ALL RIGHTS RESERVED</p>
+  </footer>
+
+  
+  <script src="data.js"></script>
+  <script type="module" src="script.js?v=36"></script>
+</body>
+</html>

@@ -1,45 +1,20 @@
-<!DOCTYPE html>
-<html lang="es">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Órbita Firebase Test</title>
-  <link rel="icon" href="assets/favicon.ico" sizes="any">
-  <link rel="icon" type="image/png" href="assets/favicon.png">
-  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
-</head>
-<body style="font-family:system-ui;background:#050505;color:#f7f1df;padding:24px">
-<h1>Órbita Firebase Test</h1>
-<pre id="out">Probando conexión...</pre>
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+DRKPRTY GitHub Content Setup
 
-const firebaseConfig = {
-  apiKey: "AIzaSyBxChWYQYJIfdzCe4HL51x8oGixcvLAxJw",
-  authDomain: "drkprty-654ec.firebaseapp.com",
-  projectId: "drkprty-654ec",
-  storageBucket: "drkprty-654ec.firebasestorage.app",
-  messagingSenderId: "17948730429",
-  appId: "1:17948730429:web:917b9d10f70439c54c3654",
-  measurementId: "G-8TZ70MZQFM"
-};
+Destino actual del admin:
+- Owner: drkprty
+- Repo: content
+- Branch: main
+- Images path: images
+- Articles path: articles
+- Public base URL: https://cdn.jsdelivr.net/gh/drkprty/content@main
 
-const out = document.getElementById("out");
-try{
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-  const articles = await getDocs(collection(db, "articles"));
-  const events = await getDocs(collection(db, "events"));
-  const hero = await getDoc(doc(db, "siteConfig", "hero"));
-  out.textContent = JSON.stringify({
-    ok:true,
-    articles: articles.size,
-    articleIds: articles.docs.map(d=>d.id),
-    events: events.size,
-    heroExists: hero.exists(),
-    hero: hero.exists() ? hero.data() : null
-  }, null, 2);
-}catch(err){
-  out.textContent = "ERROR:\n" + (err.stack || err.message || String(err));
-}
-</script>
-</body>
-</html>
+Token recomendado:
+- GitHub Fine-grained personal access token
+- Repository access: Only selected repositories -> drkprty/content
+- Repository permissions: Contents -> Read and Write
+
+Importante:
+- Si el repo content está completamente vacío, crea un README inicial para que exista la branch main.
+- El token se guarda solo en localStorage del navegador del admin. No se sube al repo.
+- Al guardar un artículo, el admin guarda en Firebase y también crea/actualiza articles/<slug>.json en drkprty/content.
+- Si seleccionas un archivo de imagen, lo sube a images/<slug>-timestamp.ext y reemplaza el campo de imagen con URL CDN.
