@@ -206,7 +206,7 @@
 
       <label>Subir imagen al repo de GitHub
         <input id="articleImageFile" type="file" accept="image/*" />
-        <small class="field-help">Opcional: sube una imagen y el admin llenará automáticamente la URL pública de GitHub Pages.</small>
+        <small class="field-help">Opcional: sube una imagen y el admin llenará automáticamente la URL pública desde el repo drkprty/content.</small>
       </label>
 
       <label>Título
@@ -342,14 +342,14 @@
         <button type="button" class="ghost" data-close="githubDialog">Cerrar</button>
       </header>
 
-      <p class="muted">Estos datos se guardan solo en tu navegador. Usa un fine-grained token con acceso únicamente a este repo.</p>
+      <p class="muted">Estos datos se guardan solo en tu navegador. Usa un fine-grained token con acceso únicamente al repo drkprty/content. El admin guardará imágenes y JSON de artículos en GitHub.</p>
 
       <label>Owner / usuario
-        <input id="githubOwner" placeholder="oaxsun" required />
+        <input id="githubOwner" placeholder="drkprty" required />
       </label>
 
       <label>Repo
-        <input id="githubRepo" placeholder="orbita" required />
+        <input id="githubRepo" placeholder="content" required />
       </label>
 
       <label>Branch
@@ -357,11 +357,15 @@
       </label>
 
       <label>Carpeta de imágenes
-        <input id="githubUploadPath" placeholder="assets/uploads" required />
+        <input id="githubUploadPath" placeholder="images" required />
       </label>
 
-      <label>URL pública del sitio
-        <input id="githubPublicBaseUrl" placeholder="https://drkprty.uk" required />
+      <label>Carpeta de artículos JSON
+        <input id="githubArticlePath" placeholder="articles" required />
+      </label>
+
+      <label>URL pública del contenido
+        <input id="githubPublicBaseUrl" placeholder="https://cdn.jsdelivr.net/gh/drkprty/content@main" required />
       </label>
 
       <label>GitHub Personal Access Token

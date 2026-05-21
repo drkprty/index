@@ -29,6 +29,26 @@ let articleDailyViews = {};
 
 const $ = (id) => document.getElementById(id);
 
+function ensureGitHubContentDefaults(){
+  const owner = localStorage.getItem("drkprty-github-owner");
+  const repo = localStorage.getItem("drkprty-github-repo");
+
+  // Migration: older DRKPRTY builds saved media settings for oaxsun/orbita.
+  // If the browser still has those values, move only the destination defaults
+  // to the new content repo and keep the token intact.
+  if(!owner || owner === "oaxsun") localStorage.setItem("drkprty-github-owner", "drkprty");
+  if(!repo || repo === "orbita" || repo === "index") localStorage.setItem("drkprty-github-repo", "content");
+
+  if(!localStorage.getItem("drkprty-github-branch")) localStorage.setItem("drkprty-github-branch", "main");
+  if(!localStorage.getItem("drkprty-github-upload-path") || localStorage.getItem("drkprty-github-upload-path") === "assets/uploads") localStorage.setItem("drkprty-github-upload-path", "images");
+  if(!localStorage.getItem("drkprty-github-article-path")) localStorage.setItem("drkprty-github-article-path", "articles");
+  if(!localStorage.getItem("drkprty-github-public-base-url") || localStorage.getItem("drkprty-github-public-base-url") === "https://drkprty.uk") {
+    localStorage.setItem("drkprty-github-public-base-url", "https://cdn.jsdelivr.net/gh/drkprty/content@main");
+  }
+}
+
+ensureGitHubContentDefaults();
+
 function slugify(value){
   return String(value || "")
     .toLowerCase()
@@ -472,9 +492,80 @@ function getGitHubImageConfig(){
     repo: localStorage.getItem("drkprty-github-repo") || "content",
     branch: localStorage.getItem("drkprty-github-branch") || "main",
     uploadPath: localStorage.getItem("drkprty-github-upload-path") || "images",
+    articlePath: localStorage.getItem("drkprty-github-article-path") || "articles",
     publicBaseUrl: localStorage.getItem("drkprty-github-public-base-url") || "https://cdn.jsdelivr.net/gh/drkprty/content@main",
     token: localStorage.getItem("drkprty-github-token") || ""
   };
+}
+
+function textToBase64(text){
+  return btoa(unescape(encodeURIComponent(String(text || ""))));
+}
+
+async function githubGetFileSha(apiUrl, token){
+  const res = await fetch(apiUrl, {
+    headers:{
+      "Authorization":`Bearer ${token}`,
+      "Accept":"application/vnd.github+json",
+      "X-GitHub-Api-Version":"2022-11-28"
+    }
+  });
+  if(res.status === 404) return null;
+  if(!res.ok){
+    const detail = await res.text();
+    throw new Error(`GitHub lookup failed: ${res.status} ${detail}`);
+  }
+  const data = await res.json();
+  return data?.sha || null;
+}
+
+async function githubPutFile(repoPath, contentBase64, message){
+  const cfg = getGitHubImageConfig();
+  if(!cfg.token) throw new Error("Missing GitHub token");
+
+  const cleanRepoPath = String(repoPath || "").replace(/^\/|\/$/g, "");
+  const apiUrl = `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${cleanRepoPath}`;
+  const sha = await githubGetFileSha(apiUrl, cfg.token);
+
+  const body = {
+    message,
+    content:contentBase64,
+    branch:cfg.branch
+  };
+  if(sha) body.sha = sha;
+
+  const res = await fetch(apiUrl, {
+    method:"PUT",
+    headers:{
+      "Authorization":`Bearer ${cfg.token}`,
+      "Accept":"application/vnd.github+json",
+      "X-GitHub-Api-Version":"2022-11-28",
+      "Content-Type":"application/json"
+    },
+    body:JSON.stringify(body)
+  });
+
+  if(!res.ok){
+    const detail = await res.text();
+    let hint = "";
+    if(res.status === 401 || res.status === 403) hint = "\n\nRevisa que el token tenga permisos Contents: Read and Write para drkprty/content.";
+    if(res.status === 404) hint = "\n\nRevisa Owner/Repo/Branch. Debe ser drkprty/content en branch main.";
+    if(res.status === 422) hint = "\n\nSi el repo content está completamente vacío, crea primero un README en GitHub para que exista la branch main.";
+    throw new Error(`GitHub save failed: ${res.status} ${detail}${hint}`);
+  }
+
+  return res.json();
+}
+
+async function saveArticleJsonToGitHub(article){
+  const cfg = getGitHubImageConfig();
+  if(!cfg.token) return { skipped:true, reason:"missing-token" };
+
+  const articlePath = (cfg.articlePath || "articles").replace(/^\/|\/$/g, "");
+  const repoPath = `${articlePath}/${safeFileName(article.id)}.json`;
+  const json = JSON.stringify(article, null, 2);
+  await githubPutFile(repoPath, textToBase64(json), `Save article JSON: ${article.id}`);
+  return { skipped:false, repoPath };
 }
 
 function fileToBase64(file){
@@ -501,7 +592,6 @@ async function uploadArticleImageIfNeeded(articleId){
   const fileName = `${safeFileName(articleId)}-${Date.now()}.${ext}`;
   const cleanPath = cfg.uploadPath.replace(/^\/|\/$/g, "");
   const repoPath = `${cleanPath}/${fileName}`;
-  const apiUrl = `https://api.github.com/repos/${cfg.owner}/${cfg.repo}/contents/${repoPath}`;
   const publicUrl = `${cfg.publicBaseUrl.replace(/\/$/,"")}/${repoPath}`;
   const uploadButton = document.querySelector("#articleForm button[type='submit']");
   const previousText = uploadButton?.textContent;
@@ -513,25 +603,7 @@ async function uploadArticleImageIfNeeded(articleId){
 
   try{
     const content = await fileToBase64(file);
-    const res = await fetch(apiUrl, {
-      method:"PUT",
-      headers:{
-        "Authorization":`Bearer ${cfg.token}`,
-        "Accept":"application/vnd.github+json",
-        "X-GitHub-Api-Version":"2022-11-28",
-        "Content-Type":"application/json"
-      },
-      body:JSON.stringify({
-        message:`Upload article image: ${fileName}`,
-        content,
-        branch:cfg.branch
-      })
-    });
-
-    if(!res.ok){
-      const detail = await res.text();
-      throw new Error(`GitHub upload failed: ${res.status} ${detail}`);
-    }
+    await githubPutFile(repoPath, content, `Upload article image: ${fileName}`);
 
     $("articleImage").value = publicUrl;
     return publicUrl;
@@ -547,6 +619,7 @@ function openArticle(id=null){
   const a = id ? articles.find(x => x.id === id) : null;
   $("articleDialogTitle").textContent = a ? "Editar artículo" : "Crear artículo";
   $("articleId").value = a?.id || "";
+  $("articleTitle").dataset.lockedSlug = a?.id || "";
   $("articleImage").value = a?.image || "";
   if($("articleImageFile")) $("articleImageFile").value = "";
   $("articleTitle").value = a?.title || "";
@@ -974,6 +1047,7 @@ document.addEventListener("click", async (e)=>{
     $("githubRepo").value = cfg.repo;
     $("githubBranch").value = cfg.branch;
     $("githubUploadPath").value = cfg.uploadPath;
+    if($("githubArticlePath")) $("githubArticlePath").value = cfg.articlePath || "articles";
     $("githubPublicBaseUrl").value = cfg.publicBaseUrl;
     $("githubToken").value = cfg.token;
     $("githubDialog").showModal();
@@ -1058,6 +1132,17 @@ $("articleForm").addEventListener("submit", async e=>{
   else articles.unshift(article);
 
   await saveArticleDoc(article);
+  try{
+    const githubResult = await saveArticleJsonToGitHub(article);
+    if(githubResult?.skipped){
+      alert("El artículo se guardó en Firebase, pero NO se guardó en GitHub porque falta configurar el GitHub token.");
+      return;
+    }
+  }catch(error){
+    console.error(error);
+    alert(`El artículo sí se guardó en Firebase, pero NO se pudo guardar en GitHub:\n\n${error.message}`);
+    return;
+  }
   await saveHeroOnly();
   renderAll();
   $("articleDialog").close();
@@ -1118,8 +1203,9 @@ $("githubForm")?.addEventListener("submit", (event) => {
   localStorage.setItem("drkprty-github-owner", $("githubOwner").value.trim());
   localStorage.setItem("drkprty-github-repo", $("githubRepo").value.trim());
   localStorage.setItem("drkprty-github-branch", $("githubBranch").value.trim() || "main");
-  localStorage.setItem("drkprty-github-upload-path", $("githubUploadPath").value.trim() || "assets/uploads");
-  localStorage.setItem("drkprty-github-public-base-url", $("githubPublicBaseUrl").value.trim());
+  localStorage.setItem("drkprty-github-upload-path", $("githubUploadPath").value.trim() || "images");
+  localStorage.setItem("drkprty-github-article-path", $("githubArticlePath")?.value.trim() || "articles");
+  localStorage.setItem("drkprty-github-public-base-url", $("githubPublicBaseUrl").value.trim() || "https://cdn.jsdelivr.net/gh/drkprty/content@main");
   localStorage.setItem("drkprty-github-token", $("githubToken").value.trim());
   $("githubDialog").close();
   alert("Configuración de GitHub guardada en este navegador.");
