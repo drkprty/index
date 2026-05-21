@@ -2,77 +2,168 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>DRKPRTY · Firestore Views Debug</title>
-  <style>
-    body{margin:0;background:#050505;color:#fff;font-family:Arial,system-ui,sans-serif;padding:24px;line-height:1.45}
-    button{border:1px solid #fff;background:#fff;color:#000;border-radius:999px;padding:12px 16px;font-weight:800;cursor:pointer;margin-right:8px;margin-bottom:8px}
-    code,pre{background:#111;border:1px solid #333;border-radius:12px;padding:12px;display:block;white-space:pre-wrap;overflow:auto}
-    .ok{color:#8cffb3}.bad{color:#ff7d7d}.muted{color:#aaa}
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Eventos — DRKPRTY</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="preload" as="image" href="assets/drkprty-logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Archivo+Black&display=swap" rel="stylesheet">
+
+  <!-- DRKPRTY SEO START -->
+  <meta name="description" content="Agenda de conciertos, festivales y eventos musicales seleccionados por DRKPRTY.">
+  <meta name="keywords" content="DRKPRTY, drkprty, música, cultura, nightlife, vida nocturna, festivales, reseñas, entrevistas, conciertos, música independiente, cultura underground">
+  <meta name="author" content="DRKPRTY">
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+  <meta name="theme-color" content="#ff0b68">
+  <link rel="canonical" href="https://drkprty.uk/events.html">
+  <meta property="og:locale" content="es_MX">
+  <meta property="og:site_name" content="DRKPRTY">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Eventos — DRKPRTY">
+  <meta property="og:description" content="Agenda de conciertos, festivales y eventos musicales seleccionados por DRKPRTY.">
+  <meta property="og:url" content="https://drkprty.uk/events.html">
+  <meta property="og:image" content="https://drkprty.uk/assets/drkprty-logo.png">
+  <meta property="og:image:alt" content="DRKPRTY — Music, Culture & Nightlife">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Eventos — DRKPRTY">
+  <meta name="twitter:description" content="Agenda de conciertos, festivales y eventos musicales seleccionados por DRKPRTY.">
+  <meta name="twitter:image" content="https://drkprty.uk/assets/drkprty-logo.png">
+  <script type="application/ld+json" id="drkprty-static-schema">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://drkprty.uk/#organization",
+        "name": "DRKPRTY",
+        "url": "https://drkprty.uk/",
+        "logo": "https://drkprty.uk/assets/drkprty-logo.png",
+        "sameAs": []
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://drkprty.uk/#website",
+        "name": "DRKPRTY",
+        "url": "https://drkprty.uk/",
+        "publisher": {"@id": "https://drkprty.uk/#organization"},
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://drkprty.uk/news.html?search={search_term_string}",
+          "query-input": "required name=search_term_string"
+        }
+      }
+    ]
+  }
+  </script>
+  <!-- DRKPRTY SEO END -->
+
 
   <link rel="icon" href="assets/favicon.ico" sizes="any">
   <link rel="icon" type="image/png" href="assets/favicon.png">
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+  <link rel="manifest" href="site.webmanifest">
 </head>
 <body>
-  <h1>DRKPRTY · Firestore Views Debug</h1>
-  <p>Esta página prueba escritura directa en <code>articleStats/debug-test</code> usando el mismo Firebase config del sitio público.</p>
-  <p><strong>Proyecto conectado:</strong> <span id="projectId"></span></p>
-  <button id="btn">Probar escritura</button>
-  <button id="btnRandom">Probar con ID nuevo</button>
-  <pre id="out">Inicializando...</pre>
+  <div class="site-loader eye-loader" id="siteLoader" aria-label="Cargando DRKPRTY">
+    <img class="eye-loader__logo" src="assets/drkprty-eye-loader.png" alt="DRKPRTY">
+  </div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  <header class="topbar">
+    <a class="logo" href="index.html">
+      <img class="brand-eye" src="assets/drkprty-logo.png" alt="DRKPRTY">
+      <div>
+        <h1>DRKPRTY</h1>
+        <p>MUSIC · CULTURE · NIGHTLIFE</p>
+      </div>
+    </a>
 
-    const firebaseConfig = {
-  apiKey: "AIzaSyBxChWYQYJIfdzCe4HL51x8oGixcvLAxJw",
-  authDomain: "drkprty-654ec.firebaseapp.com",
-  projectId: "drkprty-654ec",
-  storageBucket: "drkprty-654ec.firebasestorage.app",
-  messagingSenderId: "17948730429",
-  appId: "1:17948730429:web:917b9d10f70439c54c3654",
-  measurementId: "G-8TZ70MZQFM"
-};
+    <nav class="main-nav">
+      <a href="index.html">Home</a>
+      <a href="news.html">News</a>
+      <a href="news.html?category=RESEÑA">Reviews</a>
+      <a href="news.html?category=ENTREVISTA">Interviews</a>
+      <a href="events.html">Events</a>
+      <a href="about.html">About</a>
+    </nav>
 
-    document.getElementById("projectId").textContent = firebaseConfig.projectId;
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const out = document.getElementById("out");
+    <div class="actions">
+      <button class="theme-toggle" id="themeToggle" title="Cambiar tema">◐</button>
+      <button class="menu-btn" onclick="toggleMenu()">MENU</button>
+    </div>
+  </header>
 
-    function log(message){
-      out.textContent = `${new Date().toLocaleTimeString()} · ${message}
-` + out.textContent;
-    }
+  <div class="overlay" id="overlay">
+    <div class="overlay-header">
+      <div>
+        <p>MENU</p>
+        <h2>DRKPRTY</h2>
+      </div>
+      <button onclick="toggleMenu()">✕</button>
+    </div>
+    <div class="overlay-links">
+      <a href="index.html">HOME →</a>
+      <a href="news.html">NEWS →</a>
+      <a href="news.html?category=RESEÑA">REVIEWS →</a>
+      <a href="news.html?category=ENTREVISTA">INTERVIEWS →</a>
+      <a href="events.html">EVENTS →</a>
+      <a href="about.html">ABOUT →</a>
+    </div>
+  </div>
 
-    async function writeTest(id = "debug-test"){
-      try{
-        const ref = doc(db, "articleStats", id);
-        log(`Leyendo articleStats/${id}...`);
-        const snap = await getDoc(ref);
-        if(snap.exists()){
-          const current = Number(snap.data()?.views || 0);
-          const next = current + 1;
-          log(`Existe. views actuales=${current}. Actualizando a ${next}...`);
-          await updateDoc(ref, { views: next });
-        }else{
-          log("No existe. Creando documento con views=1...");
-          await setDoc(ref, { views: 1 });
-        }
-        const after = await getDoc(ref);
-        log(`✅ OK. Documento guardado. views=${Number(after.data()?.views || 0)}`);
-      }catch(error){
-        log(`❌ ERROR: ${error.code || error.name || "unknown"} · ${error.message || error}`);
-        console.error(error);
-      }
-    }
+  <div class="hashtag-bar" id="tags">
+    <div class="hashtag-track" id="hashtagTrack"></div>
+  </div>
 
-    document.getElementById("btn").onclick = () => writeTest("debug-test");
-    document.getElementById("btnRandom").onclick = () => writeTest(`debug-${Date.now()}`);
-    log("Firebase inicializado. Listo para probar.");
-    writeTest("debug-test");
-  </script>
+  <main class="events-page">
+    <a href="index.html" class="back-link">← VOLVER</a>
+
+    <div class="section-title">
+      <p>AGENDA</p>
+      <h2>PRÓXIMOS EVENTOS</h2>
+    </div>
+
+    <section class="events-directory">
+      <article class="event-directory-card">
+        <strong>24<span>MAY</span></strong>
+        <div><h3>Charli XCX</h3><p>Pepsi Center WTC · CDMX</p></div>
+        <span>CONCIERTO</span>
+      </article>
+      <article class="event-directory-card">
+        <strong>30<span>MAY</span></strong>
+        <div><h3>Ca7riel & Paco Amoroso</h3><p>Foro Indie Rocks · CDMX</p></div>
+        <span>CONCIERTO</span>
+      </article>
+      <article class="event-directory-card">
+        <strong>07<span>JUN</span></strong>
+        <div><h3>Tyler, The Creator</h3><p>Palacio de los Deportes · CDMX</p></div>
+        <span>CONCIERTO</span>
+      </article>
+      <article class="event-directory-card">
+        <strong>14<span>JUN</span></strong>
+        <div><h3>Arca</h3><p>Auditorio BB · CDMX</p></div>
+        <span>CONCIERTO</span>
+      </article>
+      <article class="event-directory-card">
+        <strong>21<span>JUN</span></strong>
+        <div><h3>Festival Ceremonia</h3><p>Parque Bicentenario · CDMX</p></div>
+        <span>FESTIVAL</span>
+      </article>
+      <article class="event-directory-card">
+        <strong>28<span>JUN</span></strong>
+        <div><h3>Corona Capital Guadalajara</h3><p>Valle VFG · Guadalajara</p></div>
+        <span>FESTIVAL</span>
+      </article>
+    </section>
+  </main>
+
+  <footer>
+    <h2>DRKPRTY</h2>
+    <p>DRKPRTY 2026 © ALL RIGHTS RESERVED</p>
+  </footer>
+
+  
+  <script src="data.js"></script>
+  <script type="module" src="script.js?v=36"></script>
 </body>
 </html>

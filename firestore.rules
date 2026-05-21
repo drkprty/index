@@ -1,63 +1,20 @@
-# Órbita v25 — Firebase Firestore CMS
+# DRKPRTY — Firebase Storage Setup
 
-## Qué cambia
-- El admin ya guarda en Firebase Firestore.
-- El sitio público lee artículos, eventos y configuración del hero desde Firestore.
-- `data.js` queda como respaldo inicial/fallback.
-- GitHub Pages solo aloja los archivos del sitio; el contenido vive en Firebase.
+Para que el campo "Subir imagen a Firebase Storage" funcione:
 
-## Collections creadas/usadas
-
-### articles
-Cada documento usa como ID el slug del artículo.
-
-Campos principales:
-- id
-- title
-- category
-- date
-- read
-- author
-- image
-- excerpt
-- tags
-- body
-- quote
-- createdAt
-- publishAt
-- published
-
-### events
-Cada documento usa como ID el slug del evento.
-
-Campos:
-- id
-- day
-- month
-- title
-- venue
-- type
-- sortDate
-
-### siteConfig / hero
-Documento:
-- featured
-- autoFeatured
-- topics
-- rotation
-
-## Instrucciones en Firebase
-
-1. En Firebase Console entra a tu proyecto.
-2. Ve a Build > Firestore Database.
-3. Crea la base de datos.
-4. Inicia en modo production.
-5. Ve a Rules y pega el contenido de `firestore.rules`.
+1. Entra a Firebase Console.
+2. Ve a Build > Storage.
+3. Crea el bucket si aún no existe.
+4. Ve a Rules.
+5. Pega el contenido de `storage.rules`.
 6. Publica las reglas.
-7. Verifica que Authentication > Email/Password esté activo.
-8. Entra a `/admin/` desde tu GitHub Pages.
-9. Inicia sesión con el email/password del usuario de Firebase Auth.
-10. Al entrar por primera vez, si Firestore está vacío, el admin sembrará artículos de `data.js` y eventos demo.
 
-## Importante
-Las imágenes todavía se guardan como URL. Lo ideal después es conectar Firebase Storage o Cloudinary para subir imágenes desde el admin.
+Después:
+- En Admin > Artículos puedes elegir una imagen desde tu computadora.
+- Al guardar, el admin sube la imagen a Firebase Storage.
+- La URL pública se guarda automáticamente en el campo `image` del artículo en Firestore.
+
+Notas:
+- Las imágenes se guardan en la carpeta `articles/`.
+- El límite configurado es 10 MB por imagen.
+- Para SEO/social preview, después podemos agregar campos `imageAlt`, `seoTitle`, `seoDescription` y meta tags dinámicos.

@@ -1,12 +1,23 @@
-rules_version = '2';
-
-service firebase.storage {
-  match /b/{bucket}/o {
-    match /articles/{fileName} {
-      allow read: if true;
-      allow write: if request.auth != null
-        && request.resource.size < 10 * 1024 * 1024
-        && request.resource.contentType.matches('image/.*');
+{
+  "name": "DRKPRTY",
+  "short_name": "DRKPRTY",
+  "description": "DRKPRTY es un medio independiente de música, cultura, vida nocturna, reseñas, entrevistas, festivales y escenas emergentes.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#050505",
+  "theme_color": "#ff0b68",
+  "icons": [
+    {
+      "src": "assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
     }
-  }
+  ],
+  "scope": "/",
+  "id": "https://drkprty.uk/"
 }
