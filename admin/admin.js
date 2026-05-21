@@ -632,6 +632,14 @@ function absoluteSiteUrl(path = "/"){
   return `https://drkprty.uk${clean.startsWith("/") ? clean : `/${clean}`}`;
 }
 
+function normalizeAbsoluteImageUrl(value){
+  const raw = String(value || "").trim();
+  if(!raw) return absoluteSiteUrl("/assets/drkprty-eye-logo.png");
+  if(/^https?:\/\//i.test(raw)) return raw;
+  if(raw.startsWith("//")) return `https:${raw}`;
+  return absoluteSiteUrl(raw.startsWith("/") ? raw : `/${raw}`);
+}
+
 function isPublishedForGitHubExport(article){
   if(!article) return false;
   const published = article.published === true || String(article.published).toLowerCase() === "true";
@@ -682,7 +690,7 @@ function ensureArticleShareFields(article){
 function buildStaticArticleHtml(article){
   const title = article.title || "DRKPRTY";
   const desc = article.excerpt || "Music, culture & nightlife.";
-  const image = article.image || absoluteSiteUrl("/assets/drkprty-eye-logo.png");
+  const image = normalizeAbsoluteImageUrl(article.image || article.imageUrl);
   const articleUrl = absoluteSiteUrl(`/article.html?id=${encodeURIComponent(article.id)}`);
   const seoUrl = article.seoUrl || absoluteSiteUrl(`/articles/${safeFileName(article.id)}.html`);
   const published = article.publishAt || article.createdAt || new Date().toISOString();
@@ -713,12 +721,17 @@ function buildStaticArticleHtml(article){
   <meta property="og:description" content="${escapeHtml(desc)}">
   <meta property="og:url" content="${escapeHtml(seoUrl)}">
   <meta property="og:image" content="${escapeHtml(image)}">
+  <meta property="og:image:secure_url" content="${escapeHtml(image)}">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="${escapeHtml(title)}">
   <meta name="twitter:description" content="${escapeHtml(desc)}">
   <meta name="twitter:image" content="${escapeHtml(image)}">
   <script type="application/ld+json">${escapeJsonScript(schema)}</script>
-  <script>window.location.replace(${JSON.stringify(articleUrl)});</script>
+  <script>
+    setTimeout(function(){ window.location.replace(${JSON.stringify(articleUrl)}); }, 700);
+  </script>
 </head>
 <body>
   <p>Redirigiendo a <a href="${escapeHtml(articleUrl)}">${escapeHtml(title)}</a>...</p>
@@ -729,7 +742,7 @@ function buildStaticArticleHtml(article){
 function buildShortlinkHtml(article){
   const title = article.title || "DRKPRTY";
   const desc = article.excerpt || "Music, culture & nightlife.";
-  const image = article.image || absoluteSiteUrl("/assets/drkprty-eye-logo.png");
+  const image = normalizeAbsoluteImageUrl(article.image || article.imageUrl);
   const shortUrl = article.shortUrl || absoluteSiteUrl(`/go/${article.shortCode}/`);
   const articleUrl = absoluteSiteUrl(`/article.html?id=${encodeURIComponent(article.id)}`);
   return `<!DOCTYPE html>
@@ -746,11 +759,16 @@ function buildShortlinkHtml(article){
   <meta property="og:description" content="${escapeHtml(desc)}">
   <meta property="og:url" content="${escapeHtml(shortUrl)}">
   <meta property="og:image" content="${escapeHtml(image)}">
+  <meta property="og:image:secure_url" content="${escapeHtml(image)}">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="${escapeHtml(title)}">
   <meta name="twitter:description" content="${escapeHtml(desc)}">
   <meta name="twitter:image" content="${escapeHtml(image)}">
-  <script>window.location.replace(${JSON.stringify(articleUrl)});</script>
+  <script>
+    setTimeout(function(){ window.location.replace(${JSON.stringify(articleUrl)}); }, 700);
+  </script>
 </head>
 <body>
   <p>Redirigiendo a <a href="${escapeHtml(articleUrl)}">${escapeHtml(title)}</a>...</p>

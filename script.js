@@ -667,9 +667,9 @@ function getArticleShortCode(article){
 }
 
 function getArticleShareUrl(article){
+  if(article?.shortUrl) return article.shortUrl;
   const shortCode = getArticleShortCode(article);
   if(shortCode) return `${DRKPRTY_SITE_URL}/go/${encodeURIComponent(shortCode)}/`;
-  if(article?.shortUrl) return article.shortUrl;
   if(article?.seoUrl) return article.seoUrl;
   const url = new URL(`${DRKPRTY_SITE_URL}/article.html`);
   if(article?.id) url.searchParams.set("id", article.id);
@@ -737,7 +737,7 @@ function renderArticlePage(){
   const shareUrl = getArticleShareUrl(article);
   const shareText = buildArticleShareText(article);
   const xShareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`;
-  const fbShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(shareText)}`;
+  const fbShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
   const waShareUrl = `https://wa.me/?text=${encodeURIComponent(`${shareText} ${shareUrl}`)}`;
 
   shell.innerHTML = `
