@@ -4674,11 +4674,11 @@ footer p{
 }
 
 
-/* 2105_3: WhatsApp share button */
+/* 2105_4: WhatsApp share button */
 .article-share-actions .share-btn-whatsapp{
   font-family:Arial, Helvetica, sans-serif;
   font-size:12px;
   font-weight:900;
   letter-spacing:0;
-  text-transform:uppercase;
+  text-transform:none;
 }
