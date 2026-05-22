@@ -77,7 +77,7 @@
     <section id="hero" class="panel active">
       <div class="card">
         <h3>Destacadas</h3>
-        <p class="muted">Elige cuántas destacadas mostrar. En automático se rellenan todos los días con las últimas entradas publicadas o, si activas el switch, con los artículos más vistos de los últimos 7 días. Los slots manuales siguen funcionando como prioridad.</p>
+        <p class="muted">Elige cuántas destacadas mostrar y cómo se llena el hero. Todos los modos automáticos se recalculan con entradas publicadas; Manual respeta únicamente lo que selecciones en los slots.</p>
         <div class="form-grid">
           <label>Número de destacadas
             <select id="heroFeaturedCount">
@@ -86,13 +86,13 @@
               <option value="5">5 destacadas</option>
             </select>
           </label>
-          <label class="switch-row hero-auto">
-            <span>Autorrellenar destacadas automáticamente</span>
-            <input id="heroAutoFeatured" type="checkbox" />
-          </label>
-          <label class="switch-row hero-auto">
-            <span>Usar los más vistos de los últimos 7 días en los primeros lugares</span>
-            <input id="heroFeaturedModeTop" type="checkbox" />
+          <label>Modo de llenado
+            <select id="heroFeaturedMode">
+              <option value="latest">Más recientes</option>
+              <option value="popular7">Más populares últimos 7 días</option>
+              <option value="mixed">Combinación recientes + populares</option>
+              <option value="manual">Manual</option>
+            </select>
           </label>
         </div>
         <div id="heroFeatured" class="slot-list"></div>

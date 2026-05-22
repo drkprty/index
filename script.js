@@ -717,6 +717,17 @@ function renderArticleBody(article){
 }
 
 
+
+function isMobileShareDevice(){
+  return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent || "") || window.matchMedia("(max-width: 760px)").matches;
+}
+
+function shareIcon(name){
+  if(name === "whatsapp") return `<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16.04 3C9.42 3 4.02 8.38 4.02 15c0 2.2.6 4.26 1.64 6.03L4 29l8.17-1.59A11.9 11.9 0 0 0 16.04 27C22.66 27 28 21.62 28 15S22.66 3 16.04 3Zm0 21.8c-1.94 0-3.74-.57-5.25-1.56l-.38-.24-4.84.94.97-4.72-.25-.4A9.67 9.67 0 0 1 6.22 15c0-5.4 4.4-9.8 9.82-9.8A9.8 9.8 0 0 1 25.84 15c0 5.4-4.4 9.8-9.8 9.8Zm5.38-7.34c-.3-.15-1.75-.86-2.02-.96-.27-.1-.47-.15-.67.15-.2.3-.77.96-.94 1.16-.17.2-.35.22-.65.07-.3-.15-1.25-.46-2.38-1.47-.88-.78-1.48-1.75-1.65-2.05-.17-.3-.02-.46.13-.61.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.03-.52-.07-.15-.67-1.6-.92-2.2-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.8.37-.27.3-1.05 1.03-1.05 2.5s1.08 2.91 1.23 3.11c.15.2 2.12 3.23 5.13 4.53.72.31 1.28.5 1.72.64.72.23 1.38.2 1.9.12.58-.09 1.75-.72 2-1.41.25-.7.25-1.3.17-1.42-.07-.12-.27-.2-.57-.35Z"/></svg>`;
+  if(name === "facebook") return `<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M18.35 28V17.1h3.66l.55-4.25h-4.21v-2.71c0-1.23.34-2.07 2.1-2.07h2.25V4.26A30.1 30.1 0 0 0 19.43 4c-3.24 0-5.46 1.98-5.46 5.62v3.23h-3.66v4.25h3.66V28h4.38Z"/></svg>`;
+  return "X";
+}
+
 function renderArticlePage(){
   const shell = document.getElementById("articleShell");
   if(!shell) return;
@@ -762,9 +773,9 @@ function renderArticlePage(){
       <h3>COMPARTIR</h3>
       <div class="share article-share-actions">
         <a href="#" data-copy-link class="share-btn share-btn-copy" title="Copiar link" aria-label="Copiar link">↗</a>
-        <a href="${xShareUrl}" target="_blank" rel="noopener noreferrer" data-share-x class="share-btn share-btn-x" title="Compartir en X" aria-label="Compartir en X">X</a>
-        <a href="${fbShareUrl}" target="_blank" rel="noopener noreferrer" data-share-facebook class="share-btn share-btn-facebook" title="Compartir en Facebook" aria-label="Compartir en Facebook">f</a>
-        <a href="${waShareUrl}" target="_blank" rel="noopener noreferrer" data-share-whatsapp class="share-btn share-btn-whatsapp" title="Compartir en WhatsApp" aria-label="Compartir en WhatsApp">WA</a>
+        <a href="${xShareUrl}" target="_blank" rel="noopener noreferrer" data-share-x class="share-btn share-btn-x" title="Compartir en X" aria-label="Compartir en X">${shareIcon("x")}</a>
+        <a href="${fbShareUrl}" target="_blank" rel="noopener noreferrer" data-share-facebook data-share-url="${shareUrl}" data-share-title="${(article.title || "DRKPRTY").replace(/"/g,'&quot;')}" data-share-text="${shareText.replace(/"/g,'&quot;')}" class="share-btn share-btn-facebook" title="Compartir en Facebook" aria-label="Compartir en Facebook">${shareIcon("facebook")}</a>
+        <a href="${waShareUrl}" target="_blank" rel="noopener noreferrer" data-share-whatsapp class="share-btn share-btn-whatsapp" title="Compartir en WhatsApp" aria-label="Compartir en WhatsApp">${shareIcon("whatsapp")}</a>
       </div>
 
       <h3>TAGS</h3>
@@ -838,20 +849,29 @@ function renderFeatured(){
   const featuredCount = Math.min(5, Math.max(3, Number(hero?.featuredCount || featuredIds.length || 3)));
   let selected = featuredIds.map(id => articles.find(a => a.id === id)).filter(Boolean);
 
-  // Auto mode respects manual picks as priority/pinned slots.
-  // Empty slots are filled daily with either latest articles or the top viewed
-  // articles from the last 7 days, depending on the Home setting.
-  if(hero?.autoFeatured || selected.length < featuredCount){
+  const mode = ["latest", "popular7", "mixed", "manual"].includes(hero?.featuredMode)
+    ? hero.featuredMode
+    : (hero?.featuredMode === "top7" ? "popular7" : "latest");
+
+  if(mode !== "manual" || selected.length < featuredCount){
     const used = new Set(selected.map(a => a.id));
     const latestPool = articles.filter(a => !used.has(a.id));
-    const autoPool = hero?.featuredMode === "top7"
-      ? [...topViewedLast7Public(articles).slice(0, 3), ...articles]
-      : articles;
-    const fillPool = autoPool.filter(a => !used.has(a.id));
-    selected = selected.concat(fillPool.slice(0, featuredCount - selected.length));
-    if(selected.length < featuredCount){
-      const usedAgain = new Set(selected.map(a => a.id));
-      selected = selected.concat(latestPool.filter(a => !usedAgain.has(a.id)).slice(0, featuredCount - selected.length));
+    const popularPool = topViewedLast7Public(articles).filter(a => !used.has(a.id));
+    let autoPool = latestPool;
+
+    if(mode === "popular7") autoPool = [...popularPool, ...latestPool];
+    if(mode === "mixed"){
+      autoPool = [];
+      const max = Math.max(popularPool.length, latestPool.length);
+      for(let i = 0; i < max; i++){
+        if(popularPool[i]) autoPool.push(popularPool[i]);
+        if(latestPool[i]) autoPool.push(latestPool[i]);
+      }
+    }
+
+    if(mode !== "manual"){
+      const fillPool = autoPool.filter(a => a && !used.has(a.id));
+      selected = selected.concat(fillPool.slice(0, featuredCount - selected.length));
     }
   }
 
@@ -861,7 +881,7 @@ function renderFeatured(){
     totalArticles: articles.length,
     selected: selected.map(a => a.id),
     autoFeatured: !!hero?.autoFeatured,
-    featuredMode: hero?.featuredMode || "latest"
+    featuredMode: mode || "latest"
   });
 
   if(!selected.length){
@@ -1075,12 +1095,27 @@ function setupFeaturedCarousel(){
 
 function setupShareCopy(){
   document.addEventListener("click", async (event) => {
+    const fbBtn = event.target.closest("[data-share-facebook]");
+    if(fbBtn && isMobileShareDevice() && navigator.share){
+      event.preventDefault();
+      try{
+        await navigator.share({
+          title: fbBtn.dataset.shareTitle || "DRKPRTY",
+          text: fbBtn.dataset.shareText || "",
+          url: fbBtn.dataset.shareUrl || fbBtn.href
+        });
+      }catch(err){
+        if(err?.name !== "AbortError") window.open(fbBtn.href, "_blank", "noopener,noreferrer");
+      }
+      return;
+    }
+
     const btn = event.target.closest("[data-copy-link]");
     if(!btn) return;
 
     event.preventDefault();
 
-    const url = window.location.href;
+    const url = getArticleShareUrl(getArticles().find(a => a.id === new URLSearchParams(window.location.search).get("id"))) || window.location.href;
 
     try{
       await navigator.clipboard.writeText(url);

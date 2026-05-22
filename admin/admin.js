@@ -26,6 +26,7 @@ let isReady = false;
 let analyticsRange = "all";
 let analyticsSort = "desc";
 let articleDailyViews = {};
+let scheduledPublishTimer = null;
 
 const $ = (id) => document.getElementById(id);
 
@@ -101,6 +102,8 @@ function isScheduled(article){
 
 function isPublished(article){
   if(isScheduled(article)) return false;
+  const t = parsePublishTime(article.publishAt);
+  if(t && t <= Date.now() && (article.published === "scheduled" || article.scheduled === true)) return true;
   return article.published === true || article.published === "true";
 }
 
@@ -152,7 +155,14 @@ function featuredLimit(){
 }
 
 function featuredMode(){
-  return hero.featuredMode === "top7" ? "top7" : "latest";
+  const mode = String(hero.featuredMode || "latest");
+  if(["latest", "popular7", "mixed", "manual"].includes(mode)) return mode;
+  if(mode === "top7") return "popular7";
+  return "latest";
+}
+
+function isAutoFeaturedMode(){
+  return featuredMode() !== "manual";
 }
 
 function articleViewsLast7(article){
@@ -176,6 +186,7 @@ function topViewedLast7Articles(){
 
 function getAutoFeaturedIds(){
   const limit = featuredLimit();
+  const mode = featuredMode();
   const manual = (hero.featured || []).filter(Boolean);
   const used = new Set();
   const selected = [];
@@ -188,13 +199,25 @@ function getAutoFeaturedIds(){
     }
   });
 
-  const autoPool = featuredMode() === "top7"
-    ? [...topViewedLast7Articles().slice(0,3), ...publishedArticles()]
-    : publishedArticles();
+  if(mode === "manual") return selected.slice(0, limit);
+
+  const latest = publishedArticles();
+  const popular = topViewedLast7Articles();
+  let autoPool = latest;
+
+  if(mode === "popular7") autoPool = [...popular, ...latest];
+  if(mode === "mixed"){
+    autoPool = [];
+    const max = Math.max(latest.length, popular.length);
+    for(let i = 0; i < max; i++){
+      if(popular[i]) autoPool.push(popular[i]);
+      if(latest[i]) autoPool.push(latest[i]);
+    }
+  }
 
   autoPool.forEach(article => {
     if(selected.length >= limit) return;
-    if(!used.has(article.id)){
+    if(article && !used.has(article.id)){
       used.add(article.id);
       selected.push(article.id);
     }
@@ -210,7 +233,8 @@ function syncAutoFeatured(){
 
 function normalizeHero(){
   if(typeof hero.autoFeatured === "undefined") hero.autoFeatured = false;
-  hero.featuredMode = hero.featuredMode === "top7" ? "top7" : "latest";
+  hero.featuredMode = featuredMode();
+  hero.autoFeatured = isAutoFeaturedMode();
   hero.featuredCount = featuredLimit();
   if(!Array.isArray(hero.featured)) hero.featured = [];
   if(!Array.isArray(hero.rotation)) hero.rotation = [];
@@ -228,11 +252,25 @@ async function publishDueScheduledArticles(){
 
   if(!due.length) return;
 
-  await Promise.all(due.map(a => {
+  for(const a of due){
     a.published = true;
     a.scheduled = false;
-    return saveArticleDoc(a);
-  }));
+    a.updatedAt = new Date().toISOString();
+    await saveArticleDoc(a);
+    try{
+      await saveArticleJsonToGitHub(ensureArticleShareFields(a));
+    }catch(err){
+      console.warn("No se pudo exportar artículo programado a GitHub", a.id, err);
+    }
+  }
+
+  if(isReady){
+    try{
+      await saveHeroOnly();
+    }catch(err){
+      console.warn("No se pudo refrescar Home después de publicar programados", err);
+    }
+  }
 }
 
 async function loadAllFromFirestore(){
@@ -262,7 +300,6 @@ async function loadAllFromFirestore(){
     await seedArticles();
   }
 
-  await publishDueScheduledArticles();
 
   const eventSnap = await fb.getDocs(fb.query(fb.collection(fb.db, "events"), fb.orderBy("sortDate", "asc")));
   events = eventSnap.docs.map(d => ({ id:d.id, ...d.data() }));
@@ -277,8 +314,8 @@ async function loadAllFromFirestore(){
     hero = { ...hero, ...heroDoc.data() };
   }else{
     hero = {
-      featured: getAutoFeaturedIds(),
-      autoFeatured:false,
+      featured: [],
+      autoFeatured:true,
       featuredMode:"latest",
       featuredCount:3,
       topics: [],
@@ -288,6 +325,8 @@ async function loadAllFromFirestore(){
   }
 
   await loadArticleDailyViews(statsById);
+  normalizeHero();
+  await publishDueScheduledArticles();
   normalizeHero();
 }
 
@@ -306,7 +345,7 @@ async function saveHeroOnly(){
 
   await fb.setDoc(fb.doc(fb.db, "siteConfig", "hero"), {
     featured: hero.featured.filter(Boolean).slice(0, featuredLimit()),
-    autoFeatured: hero.autoFeatured,
+    autoFeatured: isAutoFeaturedMode(),
     featuredMode: featuredMode(),
     featuredCount: featuredLimit(),
     topics: publishedArticles().slice(0,10).map(a => a.id),
@@ -357,7 +396,7 @@ function renderSlotList(boxId, key, count, filterFn){
   box.innerHTML = "";
   const slotCount = key === "featured" ? featuredLimit() : count;
 
-  const effectiveFeatured = key === "featured" && hero.autoFeatured ? getAutoFeaturedIds() : null;
+  const effectiveFeatured = key === "featured" && isAutoFeaturedMode() ? getAutoFeaturedIds() : null;
 
   for(let i=0; i<slotCount; i++){
     const displayId = key === "featured" && effectiveFeatured ? effectiveFeatured[i] : hero[key]?.[i];
@@ -376,7 +415,7 @@ function renderSlotList(boxId, key, count, filterFn){
       <strong>${String(i+1).padStart(2,"0")}</strong>
       <div>
         <h4>${a ? a.title : "Sin seleccionar"}</h4>
-        <p>${a ? `${a.category} · ${a.date}${key === "featured" && !manualId && hero.autoFeatured ? " · Auto" : ""}` : "Selecciona una entrada"}</p>
+        <p>${a ? `${a.category} · ${a.date}${key === "featured" && !manualId && isAutoFeaturedMode() ? " · Auto" : ""}` : "Selecciona una entrada"}</p>
       </div>
       <button type="button" class="primary" data-select-slot="${key}" data-index="${i}" data-filter="${filterFn || ""}">Seleccionar</button>
       ${key === "featured" ? `<button type="button" class="slot-remove" data-remove-featured="${i}" ${canRemove ? "" : "disabled"} title="${canRemove ? "Quitar selección manual" : "Slot automático"}">×</button>` : ""}
@@ -389,8 +428,7 @@ function renderHero(){
   syncAutoFeatured();
   normalizeHero();
 
-  $("heroAutoFeatured").checked = !!hero.autoFeatured;
-  if($("heroFeaturedModeTop")) $("heroFeaturedModeTop").checked = featuredMode() === "top7";
+  if($("heroFeaturedMode")) $("heroFeaturedMode").value = featuredMode();
   if($("heroFeaturedCount")) $("heroFeaturedCount").value = String(featuredLimit());
   renderSlotList("heroFeatured", "featured", featuredLimit(), "published");
   renderSlotList("heroRotation", "rotation", 5, "review");
@@ -1170,6 +1208,16 @@ function initLogin(){
       await loadAllFromFirestore();
       isReady = true;
       renderAll();
+      if(!scheduledPublishTimer){
+        scheduledPublishTimer = setInterval(async () => {
+          try{
+            await publishDueScheduledArticles();
+            renderAll();
+          }catch(err){
+            console.warn("No se pudo revisar artículos programados", err);
+          }
+        }, 60000);
+      }
     }
   }
 
@@ -1304,15 +1352,9 @@ document.addEventListener("click", async (e)=>{
   }
 });
 
-$("heroAutoFeatured").addEventListener("change", async (e)=>{
-  hero.autoFeatured = e.target.checked;
-  await saveHeroOnly();
-  renderHero();
-});
-
-$("heroFeaturedModeTop")?.addEventListener("change", async (e)=>{
-  hero.featuredMode = e.target.checked ? "top7" : "latest";
-  hero.autoFeatured = true;
+$("heroFeaturedMode")?.addEventListener("change", async (e)=>{
+  hero.featuredMode = e.target.value;
+  hero.autoFeatured = isAutoFeaturedMode();
   await saveHeroOnly();
   renderHero();
 });
@@ -1393,17 +1435,21 @@ $("articleForm").addEventListener("submit", async e=>{
 
     await saveArticleDoc(article);
 
-    if(submitButton) submitButton.textContent = "Guardando JSON en GitHub...";
-    const githubResult = await saveArticleJsonToGitHub(article);
-    if(githubResult?.skipped){
-      alert("El artículo se guardó en Firebase, pero NO se guardó en GitHub porque falta configurar el GitHub token.");
-      return;
+    if(shouldSchedule){
+      console.info("Artículo programado guardado solo en Firebase. Se exportará a GitHub cuando llegue su hora.", article.id);
+    }else{
+      if(submitButton) submitButton.textContent = "Guardando JSON en GitHub...";
+      const githubResult = await saveArticleJsonToGitHub(article);
+      if(githubResult?.skipped){
+        alert("El artículo se guardó en Firebase, pero NO se guardó en GitHub porque falta configurar el GitHub token.");
+        return;
+      }
+      console.info(`Artículo guardado en GitHub: ${githubResult.repoPath}`);
     }
 
     await saveHeroOnly();
     renderAll();
     $("articleDialog").close();
-    console.info(`Artículo guardado en GitHub: ${githubResult.repoPath}`);
   }catch(error){
     console.error(error);
     alert(`No se pudo completar el guardado:\n\n${error.message}`);
@@ -1519,7 +1565,7 @@ $("exportAll").addEventListener("click",()=>{
     events,
     hero:{
       featured: hero.featured.filter(Boolean).slice(0, featuredLimit()),
-      autoFeatured: hero.autoFeatured,
+      autoFeatured: isAutoFeaturedMode(),
       featuredMode: featuredMode(),
       featuredCount: featuredLimit(),
       topics: publishedArticles().slice(0,10).map(a=>a.id),

@@ -4663,3 +4663,20 @@ footer p{
   font-weight:900;
   letter-spacing:0;
 }
+
+/* 2105_10: clearer social share icons */
+.article-share-actions .share-btn svg{
+  width:18px;
+  height:18px;
+  display:block;
+  fill:currentColor;
+}
+.article-share-actions .share-btn-facebook{
+  font-family:Arial, Helvetica, sans-serif;
+  font-weight:900;
+  text-transform:none;
+}
+.article-share-actions .share-btn-whatsapp{
+  font-family:Arial, Helvetica, sans-serif;
+  font-size:0;
+}
