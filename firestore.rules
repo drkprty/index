@@ -17,7 +17,7 @@ service cloud.firestore {
         request.resource.data.keys().hasOnly(["articleId", "views", "dailyViews", "updatedAt"]) &&
         request.resource.data.articleId is string &&
         request.resource.data.views is int &&
-        request.resource.data.views >= resource.data.views &&
+        request.resource.data.views >= 0 &&
         request.resource.data.dailyViews is map;
     }
 
@@ -36,7 +36,9 @@ service cloud.firestore {
         request.resource.data.articleId is string &&
         request.resource.data.date is string &&
         request.resource.data.views is int &&
-        request.resource.data.views >= resource.data.views;
+        request.resource.data.views >= 0;
+
+      allow delete: if true;
     }
 
     match /newsletterSubscribers/{subscriberId} {

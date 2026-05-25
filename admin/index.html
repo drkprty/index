@@ -141,16 +141,16 @@
       <div class="panel-header">
         <div>
           <h3>Analytics</h3>
-          <p class="muted">Vistas registradas desde Firestore. Histórico es la vista por default.</p>
+          <p class="muted">Vistas registradas desde Firestore. Hoy es la vista por default.</p>
         </div>
-        <button class="primary" id="refreshAnalytics" type="button">Actualizar analytics</button>
+        <div class="panel-actions"><button class="primary" id="refreshAnalytics" type="button">Actualizar analytics</button><button class="danger" id="openAnalyticsReset" type="button">Borrar registro</button></div>
       </div>
 
       <div class="analytics-summary">
         <article class="analytics-card">
           <span>Total de vistas</span>
           <strong id="analyticsTotalViews">0</strong>
-          <small id="analyticsRangeLabel">Histórico</small>
+          <small id="analyticsRangeLabel">Hoy</small>
         </article>
         <article class="analytics-card">
           <span>Artículos con vistas</span>
@@ -161,11 +161,11 @@
 
       <div class="toolbar analytics-toolbar">
         <div class="tabs analytics-range-tabs">
-          <button class="active" data-analytics-range="all">Histórico</button>
-          <button data-analytics-range="today">Hoy</button>
+          <button class="active" data-analytics-range="today">Hoy</button>
           <button data-analytics-range="7d">7 días</button>
           <button data-analytics-range="30d">30 días</button>
           <button data-analytics-range="year">Este Año</button>
+          <button data-analytics-range="all">Histórico</button>
         </div>
         <label class="analytics-sort-label">Ordenar
           <select id="analyticsSort">
@@ -190,6 +190,25 @@
       <div id="eventList" class="list"></div>
     </section>
   </main>
+  <dialog id="analyticsResetDialog" class="admin-dialog">
+    <form method="dialog" class="dialog-card">
+      <h3>Borrar registro de vistas</h3>
+      <p class="muted">Selecciona el rango que quieres limpiar de Analytics.</p>
+      <label>Rango a borrar
+        <select id="analyticsResetRange">
+          <option value="today">Hoy</option>
+          <option value="7d">Últimos 7 días</option>
+          <option value="30d">Últimos 30 días</option>
+          <option value="year">Este Año</option>
+          <option value="all">Histórico</option>
+        </select>
+      </label>
+      <menu>
+        <button type="button" data-close="analyticsResetDialog">Cancelar</button>
+        <button type="button" class="danger" id="confirmAnalyticsReset">Borrar</button>
+      </menu>
+    </form>
+  </dialog>
 
   <dialog id="articleDialog">
     <form method="dialog" class="modal-form" id="articleForm">
@@ -447,6 +466,6 @@ const statsFirebaseConfig = {
   </script>
 
   <script src="../data.js"></script>
-  <script src="admin.js?v=15"></script>
+  <script src="admin.js?v=16"></script>
 </body>
 </html>

@@ -23,7 +23,7 @@ let articleSearch = "";
 let selectContext = null;
 let draggedFeaturedIndex = null;
 let isReady = false;
-let analyticsRange = "all";
+let analyticsRange = "today";
 let analyticsSort = "desc";
 let articleDailyViews = {};
 let scheduledPublishTimer = null;
@@ -1152,6 +1152,88 @@ function viewsForRange(article){
   return total;
 }
 
+function datesForResetRange(range){
+  const today = new Date();
+  const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  if(range === "all") return null;
+  if(range === "today") return new Set([localDateKey(todayStart)]);
+  if(range === "7d" || range === "30d"){
+    const days = range === "7d" ? 7 : 30;
+    const keys = new Set();
+    for(let i = 0; i < days; i++){
+      const d = new Date(todayStart);
+      d.setDate(todayStart.getDate() - i);
+      keys.add(localDateKey(d));
+    }
+    return keys;
+  }
+  if(range === "year"){
+    const year = String(today.getFullYear());
+    return { has:(dateKey)=>String(dateKey || "").startsWith(`${year}-`) };
+  }
+  return new Set();
+}
+
+function shouldResetDate(dateKey, resetDates){
+  if(!resetDates) return true;
+  return !!resetDates.has(dateKey);
+}
+
+function buildResetStatsData(articleId, currentData = {}, range){
+  const resetDates = datesForResetRange(range);
+  const daily = currentData.dailyViews && typeof currentData.dailyViews === "object" ? {...currentData.dailyViews} : {};
+  const nextDaily = {};
+
+  if(range !== "all"){
+    Object.entries(daily).forEach(([dateKey, views]) => {
+      if(!shouldResetDate(dateKey, resetDates)) nextDaily[dateKey] = Number(views || 0);
+    });
+  }
+
+  const nextViews = range === "all"
+    ? 0
+    : Object.values(nextDaily).reduce((sum, n)=>sum + Number(n || 0), 0);
+
+  return {
+    articleId: String(currentData.articleId || articleId || ""),
+    views: nextViews,
+    dailyViews: nextDaily,
+    updatedAt: new Date().toISOString()
+  };
+}
+
+async function resetAnalyticsRange(range){
+  if(!fb?.statsDb) throw new Error("No hay conexion a Firestore de analytics.");
+  const resetDates = datesForResetRange(range);
+  const statsSnap = await fb.getDocs(fb.collection(fb.statsDb, "articleStats"));
+
+  await Promise.all(statsSnap.docs.map(async (docSnap)=>{
+    const data = docSnap.data() || {};
+    const next = buildResetStatsData(docSnap.id, data, range);
+    await fb.setDoc(fb.doc(fb.statsDb, "articleStats", docSnap.id), next, { merge:false });
+  }));
+
+  try{
+    const dailySnap = await fb.getDocs(fb.collection(fb.statsDb, "articleViewsDaily"));
+    await Promise.all(dailySnap.docs.map(async (docSnap)=>{
+      const data = docSnap.data() || {};
+      const parsed = parseDailyViewId(docSnap.id);
+      const dateKey = data.date || parsed?.date;
+      if(range === "all" || shouldResetDate(dateKey, resetDates)){
+        await fb.deleteDoc(fb.doc(fb.statsDb, "articleViewsDaily", docSnap.id));
+      }
+    }));
+  }catch(err){
+    console.warn("No se pudo limpiar articleViewsDaily", err);
+  }
+}
+
+function openAnalyticsResetDialog(){
+  const dialog = $("analyticsResetDialog");
+  if(dialog?.showModal) dialog.showModal();
+}
+
+
 function renderAnalytics(){
   const listBox = $("analyticsList");
   if(!listBox) return;
@@ -1336,6 +1418,36 @@ document.addEventListener("click", async (e)=>{
   if(refreshBtn){
     e.preventDefault();
     await refreshAnalytics();
+    return;
+  }
+
+  const resetBtn = e.target.closest("#openAnalyticsReset");
+  if(resetBtn){
+    e.preventDefault();
+    openAnalyticsResetDialog();
+    return;
+  }
+
+  const confirmResetBtn = e.target.closest("#confirmAnalyticsReset");
+  if(confirmResetBtn){
+    e.preventDefault();
+    const range = $("analyticsResetRange")?.value || "today";
+    const label = analyticsRangeLabel(range);
+    if(!confirm(`¿Seguro que quieres borrar las vistas de ${label}? Esta accion no se puede deshacer.`)) return;
+    confirmResetBtn.disabled = true;
+    confirmResetBtn.textContent = "Borrando...";
+    try{
+      await resetAnalyticsRange(range);
+      $("analyticsResetDialog")?.close();
+      await refreshAnalytics();
+      alert(`Vistas de ${label} borradas.`);
+    }catch(err){
+      console.error(err);
+      alert(`No se pudo borrar analytics: ${err.message || err}`);
+    }finally{
+      confirmResetBtn.disabled = false;
+      confirmResetBtn.textContent = "Borrar";
+    }
     return;
   }
 
