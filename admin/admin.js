@@ -187,19 +187,19 @@ function topViewedLast7Articles(){
 function getAutoFeaturedIds(){
   const limit = featuredLimit();
   const mode = featuredMode();
-  const manual = (hero.featured || []).filter(Boolean);
   const used = new Set();
   const selected = [];
 
-  manual.forEach(id => {
-    const article = getArticle(id);
-    if(article && isPublished(article) && !used.has(id)){
-      used.add(id);
-      selected.push(id);
-    }
-  });
-
-  if(mode === "manual") return selected.slice(0, limit);
+  if(mode === "manual"){
+    (hero.featured || []).filter(Boolean).forEach(id => {
+      const article = getArticle(id);
+      if(article && isPublished(article) && !used.has(id)){
+        used.add(id);
+        selected.push(id);
+      }
+    });
+    return selected.slice(0, limit);
+  }
 
   const latest = publishedArticles();
   const popular = topViewedLast7Articles();
@@ -227,8 +227,8 @@ function getAutoFeaturedIds(){
 }
 
 function syncAutoFeatured(){
-  // Auto mode no longer overwrites manual picks. Manual slots work as priority/pinned
-  // items and the remaining slots are filled with the latest published articles.
+  if(!isAutoFeaturedMode()) return;
+  hero.featured = getAutoFeaturedIds();
 }
 
 function normalizeHero(){
@@ -243,6 +243,24 @@ function normalizeHero(){
   hero.featured = hero.featured.filter(Boolean).slice(0,5);
   hero.rotation = hero.rotation.filter(Boolean).slice(0,5);
 }
+function todayKeyForHeroRefresh(date = new Date()){
+  return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`;
+}
+
+async function refreshAutoFeaturedAtEleven(force = false){
+  normalizeHero();
+  if(!isAutoFeaturedMode()) return false;
+  const now = new Date();
+  const todayKey = todayKeyForHeroRefresh(now);
+  if(!force && now.getHours() < 11) return false;
+  if(!force && hero.lastAutoFeaturedRefresh === todayKey) return false;
+  hero.featured = getAutoFeaturedIds();
+  hero.lastAutoFeaturedRefresh = todayKey;
+  await saveHeroOnly();
+  renderHero();
+  return true;
+}
+
 
 async function publishDueScheduledArticles(){
   const due = articles.filter(a => {
@@ -328,6 +346,7 @@ async function loadAllFromFirestore(){
   normalizeHero();
   await publishDueScheduledArticles();
   normalizeHero();
+  await refreshAutoFeaturedAtEleven(false);
 }
 
 async function seedArticles(){
@@ -504,13 +523,16 @@ function renderArticles(){
       <article class="list-item">
         <img src="${a.image || ""}" alt="">
         <div>
+          <span class="plain-status article-status-top ${s}">${statusLabel(a)}</span>
           <h4>${a.title || "Sin título"}</h4>
           <p>${a.excerpt || ""}</p>
           <span class="pill">${a.category || "NOTICIA"}</span>
           <span class="article-views">👁 ${Number(a.views || 0).toLocaleString("es-MX")} visitas</span>
-          <span class="plain-status ${s}">${statusLabel(a)}</span>
         </div>
-        <button type="button" class="primary" data-edit-article="${a.id}">Editar</button>
+        <div class="article-row-actions">
+          <button type="button" class="ghost icon-copy" data-copy-x-post="${a.id}" title="Copiar post" aria-label="Copiar post">⧉</button>
+          <button type="button" class="primary" data-edit-article="${a.id}">Editar</button>
+        </div>
       </article>
     `;
   }).join("");
@@ -725,6 +747,31 @@ function ensureArticleShareFields(article){
   };
 }
 
+function buildXManualPost(article){
+  const a = ensureArticleShareFields(article || {});
+  const title = String(a.title || "DRKPRTY").trim();
+  const excerpt = String(a.excerpt || "").trim();
+  const shortUrl = a.shortUrl || absoluteSiteUrl(`/article.html?id=${encodeURIComponent(a.id || "")}`);
+  return `${title}${excerpt ? ` — ${excerpt}` : ""} ${shortUrl}`.trim();
+}
+
+async function copyTextToClipboard(text){
+  if(navigator.clipboard?.writeText){
+    await navigator.clipboard.writeText(text);
+    return true;
+  }
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.setAttribute("readonly", "");
+  textarea.style.position = "fixed";
+  textarea.style.opacity = "0";
+  document.body.appendChild(textarea);
+  textarea.select();
+  const ok = document.execCommand("copy");
+  textarea.remove();
+  return ok;
+}
+
 function buildStaticArticleHtml(article){
   const title = article.title || "DRKPRTY";
   const desc = article.excerpt || "Music, culture & nightlife.";
@@ -919,8 +966,21 @@ function openArticle(id=null){
   $("articleCategory").value = a?.category || "NOTICIA";
   $("articlePublishAt").value = a?.publishAt || "";
   $("articlePublished").checked = a ? (isPublished(a) || isScheduled(a) || a.published === "scheduled" || a.scheduled === true) : true;
+  updateArticlePublishLabel();
   $("deleteArticle").style.display = a ? "inline-block" : "none";
   $("articleDialog").showModal();
+}
+
+function updateArticlePublishLabel(){
+  const label = $("articlePublishedLabel");
+  if(!label) return;
+  const publishTime = parsePublishTime($("articlePublishAt")?.value);
+  if(publishTime && publishTime > Date.now()){
+    label.textContent = "Programado";
+    if($("articlePublished")) $("articlePublished").checked = true;
+    return;
+  }
+  label.textContent = $("articlePublished")?.checked ? "Publicado" : "No publicado";
 }
 
 function normalizeImportedArticle(raw){
@@ -1212,6 +1272,7 @@ function initLogin(){
         scheduledPublishTimer = setInterval(async () => {
           try{
             await publishDueScheduledArticles();
+            await refreshAutoFeaturedAtEleven(false);
             renderAll();
           }catch(err){
             console.warn("No se pudo revisar artículos programados", err);
@@ -1323,6 +1384,29 @@ document.addEventListener("click", async (e)=>{
     return;
   }
 
+  const copyXPost = e.target.closest("[data-copy-x-post]");
+  if(copyXPost){
+    e.preventDefault();
+    const article = articles.find(a => a.id === copyXPost.dataset.copyXPost);
+    if(!article){
+      alert("No encontré esta nota para copiar el post.");
+      return;
+    }
+    try{
+      await copyTextToClipboard(buildXManualPost(article));
+      copyXPost.classList.add("copied");
+      copyXPost.title = "Copiado";
+      setTimeout(()=>{
+        copyXPost.classList.remove("copied");
+        copyXPost.title = "Copiar post";
+      }, 1200);
+    }catch(err){
+      console.error(err);
+      alert("No pude copiar el post. Revisa permisos del navegador.");
+    }
+    return;
+  }
+
   const editArticle = e.target.closest("[data-edit-article]");
   if(editArticle){
     e.preventDefault();
@@ -1355,7 +1439,11 @@ document.addEventListener("click", async (e)=>{
 $("heroFeaturedMode")?.addEventListener("change", async (e)=>{
   hero.featuredMode = e.target.value;
   hero.autoFeatured = isAutoFeaturedMode();
-  await saveHeroOnly();
+  if(isAutoFeaturedMode()){
+    await refreshAutoFeaturedAtEleven(true);
+  }else{
+    await saveHeroOnly();
+  }
   renderHero();
 });
 
@@ -1365,6 +1453,9 @@ $("heroFeaturedCount")?.addEventListener("change", async (e)=>{
   await saveHeroOnly();
   renderHero();
 });
+
+$("articlePublishAt")?.addEventListener("input", updateArticlePublishLabel);
+$("articlePublished")?.addEventListener("change", updateArticlePublishLabel);
 
 $("saveHero").addEventListener("click", async ()=>{
   await saveHeroOnly();
@@ -1397,7 +1488,7 @@ $("articleForm").addEventListener("submit", async e=>{
   const previous = articles.find(a=>a.id===id);
   const imageUrl = await uploadArticleImageIfNeeded(id);
   const publishTime = parsePublishTime($("articlePublishAt").value);
-  const shouldSchedule = !!(publishTime && publishTime > Date.now() && $("articlePublished").checked);
+  const shouldSchedule = !!(publishTime && publishTime > Date.now());
 
   let article = {
     id,

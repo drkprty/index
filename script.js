@@ -209,8 +209,8 @@ function setDynamicSEO(article){
   if(!article) return;
 
   const url = drkprtyUrl(`article.html?id=${encodeURIComponent(article.id)}`);
-  const title = `${article.title} — DRKPRTY`;
-  const description = (article.excerpt || "Lee la nota completa en DRKPRTY.").slice(0, 160);
+  const title = `${article.title} — DRKPRTY México`;
+  const description = (article.excerpt || "Lee la nota completa en DRKPRTY México: noticias de música, cultura y nightlife.").slice(0, 160);
   const image = absoluteImage(article.image);
 
   document.title = title;
@@ -265,22 +265,22 @@ function setListingSEO(){
 
   if(!window.location.pathname.includes("news.html")) return;
 
-  let title = "News — DRKPRTY";
-  let description = "Todas las noticias de música, cultura, lanzamientos, festivales y escenas emergentes en DRKPRTY.";
+  let title = "Noticias de música — DRKPRTY México";
+  let description = "Noticias de música, cultura, lanzamientos, festivales, conciertos y nightlife en DRKPRTY México.";
 
   if(category === "RESEÑA"){
-    title = "Reviews — DRKPRTY";
-    description = "Reseñas de discos, canciones, lanzamientos y cultura musical en DRKPRTY.";
+    title = "Reseñas de música — DRKPRTY México";
+    description = "Reseñas de discos, canciones, lanzamientos y cultura musical en DRKPRTY México.";
   }
 
   if(category === "ENTREVISTA"){
-    title = "Interviews — DRKPRTY";
-    description = "Entrevistas con artistas, escenas emergentes y voces de la cultura musical en DRKPRTY.";
+    title = "Entrevistas de música — DRKPRTY México";
+    description = "Entrevistas con artistas, escenas emergentes y voces de la cultura musical en DRKPRTY México.";
   }
 
   if(tag){
     title = `${tag} — DRKPRTY`;
-    description = `Archivo de artículos relacionados con ${tag} en DRKPRTY.`;
+    description = `Archivo de noticias y artículos relacionados con ${tag} en DRKPRTY México.`;
   }
 
   const qs = window.location.search || "";
@@ -301,7 +301,7 @@ function setListingSEO(){
 function setStaticPageSEO(){
   const path = window.location.pathname.split("/").pop() || "index.html";
   const map = {
-    "index.html": { title:"DRKPRTY — Music, Culture & Nightlife", desc:"DRKPRTY es un medio independiente de música, cultura, vida nocturna, reseñas, entrevistas, festivales y escenas emergentes.", url:drkprtyUrl("") },
+    "index.html": { title:"DRKPRTY México — Noticias de Música, Cultura y Nightlife", desc:"DRKPRTY México es un medio independiente de noticias de música, cultura, conciertos, festivales, reseñas, entrevistas y nightlife en México y la escena global.", url:drkprtyUrl("") },
     "events.html": { title:"Eventos — DRKPRTY", desc:"Agenda de conciertos, festivales y eventos musicales seleccionados por DRKPRTY.", url:drkprtyUrl("events.html") },
     "about.html": { title:"About — DRKPRTY", desc:"Conoce DRKPRTY: un medio independiente de música, cultura visual, internet, escenas emergentes y vida nocturna.", url:drkprtyUrl("about.html") }
   };
@@ -847,16 +847,19 @@ function renderFeatured(){
   const hero = getHeroConfig();
   const featuredIds = hero?.featured || [];
   const featuredCount = Math.min(5, Math.max(3, Number(hero?.featuredCount || featuredIds.length || 3)));
-  let selected = featuredIds.map(id => articles.find(a => a.id === id)).filter(Boolean);
 
   const mode = ["latest", "popular7", "mixed", "manual"].includes(hero?.featuredMode)
     ? hero.featuredMode
     : (hero?.featuredMode === "top7" ? "popular7" : "latest");
 
-  if(mode !== "manual" || selected.length < featuredCount){
-    const used = new Set(selected.map(a => a.id));
-    const latestPool = articles.filter(a => !used.has(a.id));
-    const popularPool = topViewedLast7Public(articles).filter(a => !used.has(a.id));
+  let selected = [];
+
+  if(mode === "manual"){
+    selected = featuredIds.map(id => articles.find(a => a.id === id)).filter(Boolean);
+  }else{
+    const used = new Set();
+    const latestPool = articles;
+    const popularPool = topViewedLast7Public(articles);
     let autoPool = latestPool;
 
     if(mode === "popular7") autoPool = [...popularPool, ...latestPool];
@@ -869,10 +872,13 @@ function renderFeatured(){
       }
     }
 
-    if(mode !== "manual"){
-      const fillPool = autoPool.filter(a => a && !used.has(a.id));
-      selected = selected.concat(fillPool.slice(0, featuredCount - selected.length));
-    }
+    autoPool.forEach(article => {
+      if(selected.length >= featuredCount) return;
+      if(article && !used.has(article.id)){
+        used.add(article.id);
+        selected.push(article);
+      }
+    });
   }
 
   selected = selected.slice(0, featuredCount);
