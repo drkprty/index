@@ -659,6 +659,8 @@ function buildArticlesIndex(){
     publishAt:a.publishAt || "",
     published:a.published,
     scheduled:!!a.scheduled,
+    shortCode:a.shortCode || "",
+    shortUrl:a.shortUrl || "",
     createdAt:a.createdAt || ""
   }));
 }
@@ -737,8 +739,24 @@ function buildArticleShortCode(article){
   return `${base}${shortCodeDate(article)}`;
 }
 
+function normalizeShortCode(value){
+  let raw = String(value || "").trim();
+  if(!raw) return "";
+  raw = raw.replace(/^https?:\/\/[^/]+\/go\//i, "");
+  raw = raw.replace(/^\/?go\//i, "");
+  raw = raw.replace(/^\/+|\/+$/g, "");
+  raw = raw.split(/[?#]/)[0] || raw;
+  return raw
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9-]+/g, "")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 40);
+}
+
 function ensureArticleShareFields(article){
-  const shortCode = article.shortCode || buildArticleShortCode(article);
+  const shortCode = normalizeShortCode(article.shortCode || article.shortlink || article.shortLink || article.shortUrl) || buildArticleShortCode(article);
   return {
     ...article,
     shortCode,
@@ -957,6 +975,10 @@ function openArticle(id=null){
   $("articleImage").value = a?.image || "";
   if($("articleImageFile")) $("articleImageFile").value = "";
   $("articleTitle").value = a?.title || "";
+  if($("articleShortCode")){
+    const shareFields = a ? ensureArticleShareFields(a) : null;
+    $("articleShortCode").value = shareFields?.shortCode || "";
+  }
   $("articleExcerpt").value = a?.excerpt || "";
   $("articleBody").value = Array.isArray(a?.body) ? a.body.join("\n\n") : "";
   $("articleSpotifyEmbed").value = a?.spotifyEmbed || "";
@@ -1005,6 +1027,7 @@ function normalizeImportedArticle(raw){
     createdAt: raw.createdAt || new Date().toISOString(),
     publishAt: raw.publishAt || "",
     published: raw.published ?? true,
+    shortCode: normalizeShortCode(raw.shortCode || raw.shortlink || raw.shortLink || raw.shortUrl || ""),
     spotifyEmbed: raw.spotifyEmbed || raw.spotify || ""
   };
 }
@@ -1618,6 +1641,7 @@ $("articleForm").addEventListener("submit", async e=>{
     publishAt:$("articlePublishAt").value,
     published: shouldSchedule ? "scheduled" : $("articlePublished").checked,
     scheduled: shouldSchedule,
+    shortCode: normalizeShortCode($("articleShortCode")?.value || previous?.shortCode || ""),
     spotifyEmbed:$("articleSpotifyEmbed").value
   };
 
